@@ -27,11 +27,11 @@ class SimulationController:
         # Contrôleur d'intersection (4 feux synchronisés)
         self.intersection = IntersectionController()
         
-        # Gestionnaire de véhicules (avec référence à l'écran pour les images)
-        self.veh_manager = VehicleManager(self.screen)
-        
         # Logger
         self.logger = Logger()
+        
+        # Gestionnaire de véhicules (avec référence à l'écran pour les images)
+        self.veh_manager = VehicleManager(self.screen, self.logger)
         
         # État de la simulation
         self.is_running = True

@@ -447,12 +447,13 @@ class Vehicle:
             self.current_speed = self.max_speed * 0.6
 
 class VehicleManager:
-    def __init__(self, screen=None):
+    def __init__(self, screen=None, logger=None):
         self.vehicles = []
         self.next_id = 1
         self.spawn_timer = 0
         self.spawn_interval = 80
         self.screen = screen
+        self.logger = logger
         self.night_mode = False
         if screen: register_vehicle_shapes(screen)
         
@@ -468,6 +469,11 @@ class VehicleManager:
         new_vehicle = Vehicle(self.next_id, direction, self.screen)
         new_vehicle.toggle_night_mode(self.night_mode)
         self.vehicles.append(new_vehicle)
+        
+        if self.logger:
+            self.logger.log_event("VEHICLE", f"Entrée véhicule {new_vehicle.id}", 
+                                   None, "Simulation", vehicle=new_vehicle)
+            
         self.next_id += 1
         return new_vehicle
 
@@ -487,6 +493,9 @@ class VehicleManager:
             if not v.is_active:
                 continue
             
+            # Sauvegarde de l'état précédent pour le log
+            was_stopped = (v.current_speed == 0)
+            
             # RESET SYSTÉMATIQUE: On part du principe qu'on veut avancer
             v.current_speed = v.max_speed
             
@@ -502,7 +511,29 @@ class VehicleManager:
             v.check_priority(self.vehicles)
             v.check_vehicle_ahead(self.vehicles)
             
+            is_stopped = (v.current_speed == 0)
+            
+            # Logique de log sur changement d'état (arrêt/départ)
+            if self.logger:
+                if is_stopped and not was_stopped:
+                    # On cherche la cause de l'arrêt pour le log
+                    cause = "Obstacle/Priority"
+                    if not v.has_turned:
+                        ls = intersection_controller.get_light_state(v.origin)
+                        if ls in ["ROUGE", "ORANGE"]: cause = f"Feu {ls}"
+                    
+                    self.logger.log_event("VEHICLE", f"Véhicule {v.id} Arrivé/Arrêté ({cause})", 
+                                           None, "Simulation", vehicle=v)
+                elif was_stopped and not is_stopped:
+                    self.logger.log_event("VEHICLE", f"Véhicule {v.id} Redémarrage", 
+                                           None, "Simulation", vehicle=v)
+
             v.move()
+            
+            # Log de sortie
+            if not v.is_active and self.logger:
+                self.logger.log_event("VEHICLE", f"Sortie véhicule {v.id}", 
+                                       None, "Simulation", vehicle=v)
         
         self.cleanup_inactive()
 
