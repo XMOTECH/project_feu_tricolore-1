@@ -1,0 +1,171 @@
+classDiagram
+    direction TB
+
+    %% --- CONTRÔLEUR PRINCIPAL (ORCHESTRATEUR) ---
+    class SimulationController {
+        +screen : Screen
+        +scene : SceneBuilder
+        +gui : InterfaceManager
+        +intersection : IntersectionController
+        +veh_manager : VehicleManager
+        +logger : Logger
+        +scenarios : dict
+        +current_scenario : ScenarioStrategy
+        +is_running : bool
+        +is_paused : bool
+        +run()
+        +handle_mouse_click(x, y)
+        +handle_mouse_move(event)
+        +update_dashboard_data()
+        -_reset_simulation()
+    }
+
+    %% --- GESTION DE L'INTERSECTION ET DES FEUX ---
+    class IntersectionController {
+        +lights : dict~TrafficLight~
+        +stop_positions : dict
+        +current_phase : str
+        +timer : int
+        +phases : dict
+        +phase_sequence : list
+        +update(scenario)
+        +standard_update()
+        +night_mode_update()
+        +manual_change()
+        +get_light_state(direction)
+        +get_stop_position(direction)
+        +get_phase_info()
+        -_apply_phase()
+    }
+
+    class TrafficLight {
+        +x : int
+        +y : int
+        +direction : str
+        +state : str
+        +timer : int
+        +durations : dict
+        +set_state(new_state)
+        +change_state()
+        +redraw()
+        +update_visuals()
+        +draw_housing()
+    }
+
+    %% --- GESTION DES VÉHICULES ---
+    class VehicleManager {
+        +vehicles : list~Vehicle~
+        +spawn_timer : int
+        +spawn_interval : int
+        +night_mode : bool
+        +spawn_vehicle(direction)
+        +auto_spawn()
+        +update_vehicles(controller)
+        +cleanup_inactive()
+        +toggle_night_mode(is_night)
+    }
+
+    class Vehicle {
+        +id : int
+        +x : float
+        +y : float
+        +v_type : str
+        +color : str
+        +current_speed : float
+        +max_speed : float
+        +turn_intention : str
+        +is_active : bool
+        +is_turning : bool
+        +night_mode : bool
+        +move()
+        +check_traffic_light(state, pos)
+        +check_vehicle_ahead(vehicles)
+        +check_priority(vehicles)
+        +toggle_night_mode(is_night)
+        -_apply_visuals()
+        -_check_turn_trigger()
+    }
+
+    %% --- INTERFACE UTILISATEUR (GUI) ---
+    class InterfaceManager {
+        +buttons : list~Button~
+        +pen : Turtle
+        +tooltip_pen : Turtle
+        +draw_controls()
+        +handle_click(x, y)
+        +handle_hover(x, y)
+        +update_stats(vehicles, time, fluidity, phase, scenario)
+        +toggle_night_mode(is_night)
+        -_panel(x, y, w, h, bg)
+    }
+
+    class Button {
+        +label : str
+        +x : int
+        +y : int
+        +w : int
+        +h : int
+        +theme : dict
+        +action_code : str
+        +draw(pen)
+        +is_clicked(x, y)
+        -_rounded_rect(pen, w, h, r)
+    }
+
+    %% --- LOGIQUE DES SCÉNARIOS (STRATEGY PATTERN) ---
+    class ScenarioStrategy {
+        <<abstract>>
+        +name : str
+        +update_intersection(intersection)*
+        +update_light(traffic_light)
+    }
+    class NormalScenario { +update_intersection(intersection) }
+    class RushHourScenario { 
+        +phase_durations : dict
+        +update_intersection(intersection) 
+    }
+    class NightScenario { +update_intersection(intersection) }
+    class ManualScenario { +update_intersection(intersection) }
+
+    %% --- INFRASTRUCTURE ET PERSISTENCE ---
+    class Logger {
+        +db : DatabaseManager
+        +log_event(type, action, light, scenario, vehicle)
+    }
+    class DatabaseManager {
+        +db_name : str
+        +get_connection()
+        +execute_query(query, params)
+        +create_tables()
+    }
+    class SceneBuilder {
+        +night_mode : bool
+        +colors : dict
+        +draw_background()
+        +draw_roads()
+        +draw_decorations()
+        +toggle_night_mode(is_night)
+        -_draw_asphalt()
+        -_draw_sidewalks_refined()
+    }
+
+    %% --- RELATIONS DE COMPOSITION (Le "Cœur" du système) ---
+    SimulationController *-- IntersectionController : possède
+    SimulationController *-- VehicleManager : possède
+    SimulationController *-- InterfaceManager : possède
+    SimulationController *-- SceneBuilder : possède
+    SimulationController *-- Logger : possède
+    
+    %% --- RELATIONS DE CONTENUS ---
+    IntersectionController *-- TrafficLight : gère 4
+    VehicleManager *-- Vehicle : gère n
+    InterfaceManager *-- Button : contient
+    Logger o-- DatabaseManager : utilise pour stockage
+
+    %% --- RELATIONS DE STRATÉGIE ET HÉRITAGE ---
+    SimulationController ..> ScenarioStrategy : délègue la logique
+    IntersectionController ..> ScenarioStrategy : est mis à jour par
+    ScenarioStrategy <|-- NormalScenario
+    ScenarioStrategy <|-- RushHourScenario
+    ScenarioStrategy <|-- NightScenario
+    ScenarioStrategy <|-- ManualScenario
