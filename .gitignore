@@ -1,0 +1,40 @@
+# Dépendances
+node_modules/
+__pycache__/
+*.py[cod]
+
+# Snapshots de l'éditeur (extension Local History)
+.history/
+
+# Builds
+frontend/dist/
+frontend/build/
+
+# Artefacts LaTeX
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
+*.bak
+
+# Sorties de simulation SUMO (régénérables)
+sumo_simulation/outputs/
+sumo_simulation/net_demand.rou.xml
+tripinfo.xml
+edgeData.xml
+*.errorlog
+
+# Exports successifs d'osmWebWizard — garder uniquement sumo_simulation/
+2026-*/
+
+# Médias volumineux
+video_simulation.mp4
+
+# Bases de données locales
+*.db
+
+# Environnement
+.env
+.venv/
+

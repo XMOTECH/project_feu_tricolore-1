@@ -1,0 +1,664 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{graphicx}
+\usepackage{geometry}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+
+\geometry{top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm}
+
+\definecolor{codeblue}{rgb}{0.1,0.2,0.6}
+\definecolor{darkgreen}{rgb}{0.1,0.5,0.1}
+\definecolor{barblue}{rgb}{0.2,0.4,0.8}
+\definecolor{linegreen}{rgb}{0.1,0.6,0.3}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=codeblue,
+    filecolor=magenta,
+    urlcolor=codeblue,
+    pdftitle={Régulation de feux par DQN sous SUMO - Évaluation contre baselines},
+    pdfpagemode=FullScreen,
+}
+
+\title{\textbf{Régulation adaptative d'un carrefour par Deep Q-Learning} \\
+\Large Entraînement, évaluation contre baselines et analyse critique \\
+\normalsize Carrefour réel de Thiès (Sénégal) sous Eclipse SUMO}
+
+\author{\textbf{Mamadou Ahmadou Ka} \\
+Étudiant en Licence 1 Informatique \\
+Département Informatique \\
+Université Iba Der Thiam de Thiès (UIDT), Sénégal}
+
+\date{8 Août 2026}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Ce document présente l'entraînement et l'évaluation d'un agent de Deep Q-Learning
+régulant un carrefour réel de Thiès (Sénégal) sous le simulateur microscopique
+Eclipse SUMO. L'agent a été entraîné sur 150 épisodes ($108\,000$ décisions), la
+demande de trafic étant régénérée à chaque épisode avec une graine différente afin
+de contraindre la généralisation.
+
+Le résultat central n'est pas la progression de l'agent par rapport à son
+initialisation aléatoire --- qui ne prouve rien --- mais sa comparaison à deux
+contrôleurs de référence sur cinq graines de trafic jamais vues à l'entraînement.
+Face au feu à programme fixe actuellement en place, le régulateur appris réduit le
+temps perdu par véhicule de $50{,}7\,\%$ ($31{,}5\text{ s} \rightarrow 15{,}5\text{ s}$)
+et le temps d'attente de $62{,}2\,\%$ ($23{,}8\text{ s} \rightarrow 9{,}0\text{ s}$).
+Un résultat contre-intuitif est également rapporté et expliqué : la baseline
+actionnée par détection de véhicules se révèle \emph{moins} performante que le feu
+fixe ($+8{,}7\,\%$ de temps perdu) sur ce carrefour à demande asymétrique.
+
+Le rapport documente enfin les limites méthodologiques de l'expérimentation, dont
+un défaut de sélection du modèle détecté et corrigé en cours d'étude.
+\end{abstract}
+
+\newpage
+\tableofcontents
+\newpage
+
+\section{Introduction et Contexte Expérimental}
+
+La régulation de trafic par apprentissage par renforcement repose sur l'interaction
+entre un agent décisionnel et un environnement de simulation microscopique. L'étude
+porte sur le carrefour
+\texttt{cluster\_6021368912\_6083287698\_6083287699\_6083287700} de la ville de
+Thiès, comportant quatre phases vertes et huit voies entrantes contrôlées.
+
+\subsection{Formulation du problème de décision markovien}
+
+\paragraph{État.} À chaque décision, l'agent observe un vecteur
+$\mathbf{s}_t \in \mathbb{R}^{13}$ composé de :
+\begin{itemize}
+  \item 4 longueurs de file d'attente, agrégées par branche et normalisées ;
+  \item 4 densités d'occupation, rapportées à la capacité de chaque groupe de voies ;
+  \item l'encodage \textit{one-hot} de la phase verte courante (4 composantes) ;
+  \item 1 indicateur binaire signalant que la durée de vert minimale est écoulée.
+\end{itemize}
+
+\paragraph{Action.} L'action $a_t \in \{0,1,2,3\}$ désigne \textbf{l'indice de la
+prochaine phase verte}. Ce choix est important : un espace binaire
+$\{\text{STAY}, \text{SWITCH}\}$ ne permettrait à l'agent que de suivre ou d'accélérer
+un cycle prédéfini, sans jamais réordonner les phases. Les actions incompatibles avec
+les contraintes de sécurité (vert minimal de $10\text{ s}$, vert maximal de $60\text{ s}$)
+sont masquées : leur valeur $Q$ est forcée à $-\infty$ avant la sélection.
+
+\paragraph{Récompense.} $r_t = (W_{t-1} - W_t)/100$, où $W$ désigne le temps
+d'attente cumulé de tous les véhicules sur les voies contrôlées. La récompense est
+positive lorsque l'agent résorbe l'attente. Le coût d'un changement de phase est
+capturé naturellement par le temps de jaune, sans pénalité arbitraire.
+
+\paragraph{Invariant temporel.} Le jaune ($3\text{ s}$) est \emph{inclus} dans
+l'intervalle de décision ($5\text{ s}$). Rester sur la phase courante et en changer
+consomment donc exactement la même durée simulée, ce qui rend les récompenses des
+deux branches comparables. Sans cet invariant, changer de phase coûterait
+mécaniquement plus de temps simulé et l'agent apprendrait à ne jamais commuter --- un
+biais qui a effectivement été observé dans une version antérieure de
+l'implémentation.
+
+\subsection{Contrôle effectif du feu}
+
+L'agent commande le carrefour par \texttt{setRedYellowGreenState()}, et non par
+\texttt{setPhase()}. Cette distinction n'est pas cosmétique : \texttt{setPhase()}
+positionne la phase mais réarme sa durée programmée, si bien que SUMO poursuit
+ensuite le cycle statique de lui-même. L'agent croit alors piloter un feu qui, en
+réalité, continue de tourner seul.
+
+Un test dédié (\texttt{rl.smoke\_test}) vérifie cette propriété : le feu est laissé
+$60\text{ s}$ sans aucun ordre et doit conserver son état, là où le programme statique
+aurait basculé après $27\text{ s}$. Un garde-fou (\texttt{assert\_in\_sync}) compare
+en outre l'état réel du feu à l'état interne de l'agent.
+
+\section{Protocole expérimental}
+
+\begin{table}[H]
+\centering
+\caption{Paramètres de l'expérimentation}
+\label{tab:protocole}
+\vspace{0.2cm}
+\begin{tabular}{ll}
+\toprule
+\textbf{Élément} & \textbf{Valeur} \\
+\midrule
+Algorithme & Double DQN, perte de Huber, cible en \textit{soft update} ($\tau = 0{,}005$) \\
+Architecture & Perceptron multicouche $13 \rightarrow 64 \rightarrow 64 \rightarrow 4$ \\
+Optimiseur & Adam, $\alpha = 5 \times 10^{-4}$, $\gamma = 0{,}99$ \\
+Tampon d'expérience & $50\,000$ transitions, lots de $64$ \\
+Début d'apprentissage & après $1\,000$ transitions collectées \\
+Exploration & $\epsilon$ linéaire de $1{,}0$ à $0{,}05$ sur $30\,000$ pas \\
+\midrule
+Durée d'un épisode & $3\,600\text{ s}$ simulées $\rightarrow$ 720 décisions \\
+Nombre d'épisodes & 150 ($108\,000$ décisions) \\
+Graines d'entraînement & $1000 + n$ pour l'épisode $n$ (demande régénérée) \\
+Graines d'évaluation & $\{7, 13, 21, 42, 77\}$, \textbf{jamais vues} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Demande de trafic.} La demande OSM d'origine laissait le carrefour en
+écoulement libre ($469\text{ véh/h}$ dispersés sur toute la ville, dont seulement 12
+trajets traversant les branches étudiées) : il n'y avait rien à optimiser. Une
+demande dédiée a donc été construite, concentrée sur les quatre branches, avec un
+axe majeur chargé deux fois plus que l'axe secondaire et un profil temporel en trois
+paliers (montée, pointe, décrue). Cette asymétrie est ce qui rend le problème de
+régulation non trivial.
+
+\paragraph{Régénération à chaque épisode.} La demande est régénérée avec une graine
+différente à chaque épisode. L'agent ne peut donc pas mémoriser une séquence
+d'arrivées particulière ; il doit apprendre une politique fonction de l'état observé.
+
+\section{Résultats d'entraînement}
+
+Le Tableau~\ref{tab:metrics_summary} présente l'évolution des indicateurs internes
+au fil de l'entraînement.
+
+\begin{table}[H]
+\centering
+\caption{Évolution des indicateurs d'entraînement (moyennes par tranche de 25 épisodes)}
+\label{tab:metrics_summary}
+\vspace{0.2cm}
+\begin{tabular}{lcccccc}
+\toprule
+\textbf{Épisodes} & \textbf{1--25} & \textbf{26--50} & \textbf{51--75} & \textbf{76--100} & \textbf{101--125} & \textbf{126--150} \\
+\midrule
+Attente moyenne ($s$)          & $413{,}3$ & $91{,}0$ & $50{,}5$ & $43{,}2$ & $38{,}9$ & $\mathbf{34{,}1}$ \\
+File moyenne (\textit{véh})    & $8{,}35$  & $4{,}31$ & $3{,}13$ & $2{,}85$ & $2{,}65$ & $\mathbf{2{,}48}$ \\
+Vitesse sur voies ($km/h$)     & $33{,}6$  & $40{,}7$ & $45{,}5$ & $47{,}6$ & $48{,}6$ & $\mathbf{49{,}4}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Valeurs aux jalons de l'entraînement}
+\label{tab:jalons}
+\vspace{0.2cm}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Métrique} & \textbf{Épisode 1} & \textbf{Épisode 50} & \textbf{Épisode 100} & \textbf{Épisode 150} \\
+\midrule
+Attente moyenne ($s$)         & $326{,}4$ & $51{,}5$   & $41{,}5$   & $\mathbf{27{,}0}$ \\
+File moyenne (\textit{véh})   & $8{,}45$  & $3{,}34$   & $2{,}70$   & $\mathbf{2{,}16}$ \\
+Perte de Huber                & $0{,}0$   & $0{,}0859$ & $0{,}0158$ & $\mathbf{0{,}0077}$ \\
+Exploration $\epsilon$        & $0{,}9772$& $0{,}0500$ & $0{,}0500$ & $0{,}0500$ \\
+Changements de phase          & $213$     & $216$      & $221$      & $218$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Avertissement sur la métrique de vitesse.} La « vitesse sur voies » est la
+moyenne de \texttt{getLastStepMeanSpeed} sur les voies contrôlées. Sur une voie
+\emph{vide}, SUMO renvoie la vitesse autorisée. Cet indicateur mélange donc la vitesse
+réelle du trafic et la proportion de voies dégagées, ce qui explique qu'il approche
+$51\text{ km/h}$ alors que la limite urbaine est de $50\text{ km/h}$. Il est
+utilisable comme signal de progression relative, mais \textbf{ne doit pas être
+présenté comme la vitesse des véhicules}. La vitesse réelle, calculée par véhicule à
+partir de \texttt{tripinfo.xml}, figure au Tableau~\ref{tab:baselines} et vaut
+$8{,}16\text{ m/s}$, soit $29{,}4\text{ km/h}$.
+
+\subsection{Progression de l'attente moyenne}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    width=0.88\textwidth,
+    height=6.5cm,
+    xlabel={Épisodes d'entraînement},
+    ylabel={Attente moyenne ($s$)},
+    xmin=1, xmax=150,
+    ymin=0, ymax=400,
+    grid=major,
+    grid style={dashed,gray!30},
+    thick,
+    axis lines=left,
+    legend pos=north east
+]
+\addplot[color=codeblue, mark=*, mark size=1.5pt, thick] coordinates {
+    (1,326.4) (10,348.7) (20,156.0) (30,132.8) (40,71.7) (50,51.5)
+    (60,46.1) (70,50.1) (80,36.1) (90,35.6) (100,41.5) (110,36.7)
+    (120,36.4) (130,39.8) (140,30.1) (150,27.0)
+};
+\addlegendentry{Attente moyenne ($s$)}
+\end{axis}
+\end{tikzpicture}
+\caption{Effondrement de l'attente moyenne, avec plateau atteint vers l'épisode 70.}
+\label{fig:wait_curve}
+\end{figure}
+
+\subsection{Décroissance de la perte}
+
+La perte optimisée est la \textbf{perte de Huber} (\texttt{smooth\_l1\_loss}), moins
+sensible aux valeurs aberrantes que l'erreur quadratique --- propriété utile ici, les
+récompenses étant occasionnellement extrêmes lors des blocages.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    width=0.88\textwidth,
+    height=6.5cm,
+    xlabel={Épisodes d'entraînement},
+    ylabel={Perte de Huber},
+    xmin=1, xmax=150,
+    ymin=0, ymax=0.55,
+    grid=major,
+    grid style={dashed,gray!30},
+    thick,
+    axis lines=left,
+    legend pos=north east
+]
+\addplot[color=linegreen, mark=square*, mark size=1.5pt, thick] coordinates {
+    (2,0.40751) (10,0.38072) (20,0.36461) (30,0.29297) (40,0.07248)
+    (50,0.08586) (60,0.10381) (70,0.10461) (80,0.02757) (90,0.0396)
+    (100,0.01582) (110,0.01739) (120,0.0145) (130,0.01457)
+    (140,0.01588) (150,0.00772)
+};
+\addlegendentry{Perte de Huber}
+\end{axis}
+\end{tikzpicture}
+\caption{Décroissance de la perte du réseau. La valeur nulle à l'épisode 1 traduit
+l'absence de mise à jour tant que le tampon n'a pas atteint $1\,000$ transitions.}
+\label{fig:loss_curve}
+\end{figure}
+
+\subsection{Distribution des attentes moyennes}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    ybar,
+    bar width=18pt,
+    width=0.88\textwidth,
+    height=6.5cm,
+    ylabel={Nombre d'épisodes},
+    symbolic x coords={[<=50s], [51-100s], [101-300s], [301-600s], [>600s]},
+    xtick=data,
+    nodes near coords,
+    nodes near coords align={vertical},
+    ymin=0, ymax=90,
+    grid=major,
+    grid style={dashed,gray!30},
+    axis lines=left,
+    enlarge x limits=0.15
+]
+\addplot[fill=barblue!80, draw=codeblue] coordinates {
+    ([<=50s],78)
+    ([51-100s],38)
+    ([101-300s],20)
+    ([301-600s],10)
+    ([>600s],4)
+};
+\end{axis}
+\end{tikzpicture}
+\caption{Répartition des attentes moyennes sur les 150 épisodes. Les 14 épisodes
+au-delà de $300\text{ s}$ appartiennent tous à la phase d'exploration initiale.}
+\label{fig:wait_histogram}
+\end{figure}
+
+\section{Évaluation contre baselines}
+
+\subsection{Pourquoi la progression interne ne prouve rien}
+
+Comparer l'agent entraîné à l'agent de l'épisode 1 revient à le comparer à un réseau
+de neurones \emph{aléatoire}. Tout agent qui apprend quoi que ce soit bat son
+initialisation ; un tel écart ne renseigne donc pas sur l'utilité pratique du
+système. La seule question qui engage le projet est : \textbf{le régulateur appris
+fait-il mieux que le feu réellement en place ?}
+
+Deux contrôleurs de référence sont donc évalués :
+
+\begin{itemize}
+  \item \textbf{fixe} --- le programme statique d'origine du réseau
+        ($27/6/6/6/27/6/6/6$), c'est-à-dire le feu tel qu'il fonctionne aujourd'hui ;
+  \item \textbf{actué} --- un feu à détection de véhicules, obtenu par
+        \texttt{netconvert --tls.default-type actuated --tls.rebuild}
+        ($minDur = 8\text{ s}$, $maxDur = 50\text{ s}$). Le vert est prolongé tant que
+        des véhicules se présentent. C'est la baseline exigeante.
+\end{itemize}
+
+Le type actionné du programme est vérifié à l'exécution : si le feu ne comporte aucun
+programme de type \texttt{ACTUATED}, l'évaluation s'interrompt par une erreur. Sans ce
+garde-fou, une baseline mal générée serait silencieusement identique au contrôleur
+fixe, et le résultat publié serait faux.
+
+\subsection{Résultats}
+
+Les trois contrôleurs sont évalués sur les cinq graines réservées, avec la même
+demande, sur des épisodes de $3\,600\text{ s}$. La politique apprise est exploitée
+sans exploration ($\epsilon = 0$). Les métriques proviennent de
+\texttt{tripinfo.xml}, donc mesurées \emph{par véhicule}.
+
+\begin{table}[H]
+\centering
+\caption{Comparaison des trois contrôleurs (5 graines inédites, écart-type inter-graines)}
+\label{tab:baselines}
+\vspace{0.2cm}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Contrôleur} & \textbf{Temps perdu ($s$)} & \textbf{Attente ($s$)} & \textbf{Trajet ($s$)} & \textbf{Vitesse ($m/s$)} & \textbf{$\Delta$} \\
+\midrule
+fixe   & $31{,}5 \pm 0{,}5$ & $23{,}8 \pm 0{,}4$ & $48{,}5$ & $6{,}37$ & référence \\
+actué  & $34{,}2 \pm 1{,}1$ & $25{,}8 \pm 0{,}8$ & $51{,}2$ & $5{,}72$ & $+8{,}7\,\%$ \\
+\textbf{DQN} & $\mathbf{15{,}5 \pm 0{,}6}$ & $\mathbf{9{,}0 \pm 0{,}5}$ & $\mathbf{32{,}7}$ & $\mathbf{8{,}16}$ & $\mathbf{-50{,}7\,\%}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Le régulateur appris divise le temps perdu par deux et l'attente par $2{,}6$ face au
+feu en place. Entre $843$ et $907$ véhicules terminent leur trajet selon la graine, avec
+moins de $1\,\%$ d'écart entre contrôleurs : les trois écoulent bien la même demande,
+et la comparaison porte donc sur la qualité de la régulation, non sur un débit
+différent.
+
+\subsection{Le gain moyen cache-t-il des véhicules sacrifiés ?}
+\label{sec:queues}
+
+Une moyenne peut s'améliorer en dégradant une minorité : un contrôleur qui fluidifie
+l'axe majeur au prix de quelques véhicules bloqués très longtemps sur l'axe secondaire
+afficherait un bon score moyen tout en étant inacceptable. La question se vérifie sur
+la distribution complète, et non sur la moyenne seule ($4\,386$ véhicules pour l'agent,
+$4\,360$ pour le contrôleur fixe, cumulés sur les cinq graines).
+
+\begin{table}[H]
+\centering
+\caption{Distribution du temps d'attente par véhicule (quantiles, en secondes)}
+\label{tab:quantiles}
+\vspace{0.2cm}
+\begin{tabular}{lcccccc}
+\toprule
+\textbf{Contrôleur} & \textbf{$n$} & \textbf{moyenne} & \textbf{médiane} & \textbf{$p_{90}$} & \textbf{$p_{99}$} & \textbf{maximum} \\
+\midrule
+fixe   & $4\,360$ & $23{,}8$ & $20$ & $55$ & $89$ & $127$ \\
+actué  & $4\,375$ & $25{,}8$ & $24$ & $53$ & $76$ & $136$ \\
+\textbf{DQN} & $4\,386$ & $\mathbf{9{,}0}$ & $\mathbf{5}$ & $\mathbf{25}$ & $\mathbf{45}$ & $\mathbf{89}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+L'agent domine à \emph{tous} les quantiles, y compris au maximum : le véhicule le plus
+pénalisé sous sa régulation attend $89\text{ s}$, contre $127\text{ s}$ sous le feu
+fixe et $136\text{ s}$ sous le feu actionné. Le gain n'est donc pas obtenu par
+report sur une minorité --- le pire cas s'améliore de $30\,\%$ en même temps que la
+moyenne. C'est une propriété qui ne se déduisait pas du Tableau~\ref{tab:baselines} et
+qui devait être vérifiée séparément.
+
+\subsection{Un résultat contre-intuitif : la baseline actionnée est moins bonne que le feu fixe}
+
+Le feu actionné dégrade les performances de $8{,}7\,\%$ par rapport au feu fixe. Ce
+résultat surprend, la détection de véhicules étant réputée supérieure à un programme
+statique. Il s'explique par la structure de la demande.
+
+La logique actionnée prolonge le vert d'une branche tant que des véhicules s'y
+présentent, sur un critère purement \emph{local}. Or l'axe majeur du carrefour est
+chargé deux fois plus que l'axe secondaire : le vert de l'axe majeur est donc
+systématiquement étendu jusqu'à $maxDur$, et l'axe secondaire est privé de vert. Le
+programme fixe, lui, garantit un tour de rôle : moins réactif, mais équitable.
+
+Cette faiblesse est précisément ce que le DQN exploite. Sa décision porte sur les
+files observées \emph{sur les quatre branches simultanément}, ce qui lui permet
+d'arbitrer entre elles plutôt que de réagir à une seule.
+
+Ce résultat est conservé tel quel plutôt que d'être écarté : une baseline qui échoue
+pour une raison identifiée est une information, et elle délimite le domaine de
+validité de la conclusion --- le gain observé tient à l'asymétrie de la demande.
+
+\section{Analyse critique et limites}
+
+\subsection{Un défaut de sélection du modèle, détecté et corrigé}
+
+La sauvegarde du « meilleur » modèle était initialement pilotée par le retour cumulé
+de l'épisode. Ce critère est vide de sens dans cette formulation : la récompense
+étant une différence $(W_{t-1} - W_t)/100$, sa somme sur un épisode se télescope en
+\[
+\sum_{t=1}^{T} \frac{W_{t-1} - W_t}{100} = \frac{W_0 - W_T}{100},
+\]
+soit une quantité qui ne dépend que des états initial et final --- du bruit autour de
+zéro, ce que confirme la colonne \texttt{reward} du journal.
+
+Conséquence mesurée : le modèle ainsi retenu (aux alentours de l'épisode 50) atteint
+$-32{,}3\,\%$ de temps perdu, contre $-50{,}7\,\%$ pour le modèle de l'épisode 150.
+Le critère a été remplacé par l'attente moyenne de l'épisode, évaluée uniquement une
+fois $\epsilon$ au plancher (sinon l'exploration résiduelle fausse la comparaison).
+
+Ce défaut est rapporté parce qu'il illustre un risque général : une métrique de
+sélection non vérifiée peut faire publier un modèle sensiblement inférieur à celui
+dont on dispose, sans qu'aucun signal d'erreur n'apparaisse.
+
+\subsection{L'agent a-t-il simplement ré-appris un cycle fixe ?}
+\label{sec:adaptivite}
+
+Le nombre de changements par épisode se concentre dans $[188, 228]$, de moyenne
+$\mu = 215{,}6$ --- une régularité qui suggère un cycle. L'argument par l'absurde
+(un cycle fixe ne peut pas diviser par deux le temps perdu d'un cycle fixe) est
+recevable mais indirect. La question est donc tranchée par la mesure directe
+(\texttt{rl/adaptivity.py}, cinq graines d'évaluation, $1\,083$ verts observés pour
+l'agent contre $795$ pour le contrôleur fixe).
+
+\paragraph{Un test invalide, à écarter explicitement.} L'idée naturelle est de
+corréler la durée d'un vert à la file de la branche desservie. Appliquée au
+contrôleur \emph{fixe}, cette corrélation vaut $r = +0{,}54$ : un feu strictement
+statique paraît donc « réagir » au trafic. L'explication est un confondant de
+topologie --- les phases de l'axe majeur ont à la fois plus de vert ($33\text{ s}$
+contre $12\text{ s}$) et plus de file. La corrélation mesure la structure du cycle,
+pas une réaction à l'état. \textbf{Elle ne peut servir de preuve dans aucun sens} et
+est écartée.
+
+\paragraph{Test valide : la variance intra-phase.} Un cycle fixe a, par construction,
+un écart-type \emph{rigoureusement nul} sur la durée d'une même phase. C'est sa
+signature, et elle est falsifiable.
+
+\begin{table}[H]
+\centering
+\caption{Modulation de la durée du vert, à phase constante (5 graines)}
+\label{tab:adaptivite}
+\vspace{0.2cm}
+\begin{tabular}{lccc}
+\toprule
+ & \textbf{fixe} & \textbf{actué} & \textbf{DQN} \\
+\midrule
+Écart-type intra-phase & $\mathbf{0{,}00}$ s & $1{,}38$ s & $\mathbf{3{,}53}$ s \\
+Plage des durées observées & $12$--$33$ s & $14$--$44$ s & $\mathbf{15}$--$\mathbf{55}$ s \\
+Choix de la phase la plus chargée & --- & --- & $\mathbf{79{,}2\,\%}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Le contrôleur fixe donne $0{,}00\text{ s}$, comme attendu. L'agent module la durée
+d'une même phase de $15$ à $55\text{ s}$ selon l'état observé : \textbf{l'hypothèse du
+cycle fixe est réfutée par la mesure}, et non seulement par l'absurde. Par ailleurs,
+lorsque plusieurs actions sont autorisées, l'agent sélectionne la phase dont la file
+est la plus longue dans $79{,}2\,\%$ des cas ($1\,208$ décisions), contre $25\,\%$ pour
+un choix uniforme sur quatre phases.
+
+La stabilité du \emph{nombre} de changements s'explique enfin par les contraintes de
+sécurité : avec un vert minimal de $10\text{ s}$ et maximal de $60\text{ s}$ sur
+$3\,600\text{ s}$, ce nombre est encadré par construction dans $[60, 360]$. La marge de
+manœuvre porte sur le choix de la phase et l'instant du basculement, non sur la
+fréquence globale.
+
+\paragraph{Effet de plancher.} La file à l'ouverture du vert vaut en moyenne
+$0{,}31$ véhicule chez l'agent, contre $2{,}24$ chez le contrôleur fixe. L'agent
+maintient le carrefour si dégagé qu'il ne reste presque plus de variance à expliquer :
+c'est un succès du contrôleur, mais cela rend tout test fondé sur cette variable peu
+informatif --- raison supplémentaire de s'appuyer sur la variance intra-phase.
+
+\subsection{Une phase abandonnée : optimisation réelle, et son coût}
+\label{sec:phase1}
+
+La mesure a révélé un comportement non anticipé : \textbf{l'agent n'ouvre jamais la
+phase 1} ($0$ vert sur $1\,083$ observés ; $410$, $451$ et $222$ pour les phases $0$,
+$2$ et $3$). L'analyse de la topologie du feu montre qu'il ne s'agit pas d'une
+défaillance.
+
+\begin{table}[H]
+\centering
+\caption{Mouvements desservis par chaque phase verte}
+\label{tab:phases}
+\vspace{0.2cm}
+\begin{tabular}{clp{7.4cm}}
+\toprule
+\textbf{Phase} & \textbf{Liens verts} & \textbf{Mouvements} \\
+\midrule
+$0$ & $10$ & axe majeur tout droit (\texttt{G}) \emph{et} tourne-à-gauche en permissif (\texttt{g}) \\
+$\mathbf{1}$ & $\mathbf{4}$ & \textbf{tourne-à-gauche de l'axe majeur uniquement, en protégé (\texttt{G})} \\
+$2$ & $6$ & axe secondaire tout droit \\
+$3$ & $4$ & tourne-à-gauche de l'axe secondaire, en protégé \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+La phase 1 est un \textbf{sous-ensemble strict de la phase 0} : tous les mouvements
+qu'elle autorise le sont déjà en phase 0, en permissif au lieu de protégé. L'agent a
+donc identifié qu'elle n'apporte aucune capacité supplémentaire et redistribue ses
+$\approx 12\text{ s}$ de vert aux mouvements qui en tirent parti. C'est une
+optimisation de fond, que ni le contrôleur fixe ni le contrôleur actionné ne peuvent
+découvrir, l'un comme l'autre parcourant les phases dans l'ordre programmé.
+
+\paragraph{Le coût, qui doit être énoncé.} Faire passer un tourne-à-gauche du protégé
+au permissif transfère la résolution du conflit au conducteur, qui doit trouver un
+créneau dans le flux opposé. En simulation, le coût reste marginal ($2$ freinages
+d'urgence sur cinq épisodes). Sur le terrain, ce compromis relève d'une décision
+d'ingénierie de sécurité et \textbf{non de l'agent} : la fonction de récompense ne
+mesure que le temps d'attente, et rien n'y représente le risque d'accident. Un agent
+optimise ce qu'on lui donne à optimiser --- ici, il a trouvé un gain que le cahier des
+charges implicite n'interdisait pas.
+
+La correction appropriée n'est pas de brider l'agent après coup mais d'inscrire la
+contrainte dans le problème : garantir un vert protégé périodique par mouvement, ou
+pénaliser explicitement les conflits permissifs dans la récompense.
+
+\subsection{Métrique de vitesse trompeuse sur les voies}
+
+Comme signalé en Section~3, la vitesse moyenne par voie intègre les voies vides, où
+SUMO renvoie la vitesse autorisée. Un carrefour parfaitement dégagé maximise donc
+cette métrique, qui mesure en partie l'absence de trafic. Les conclusions du présent
+rapport reposent pour cette raison sur \texttt{tripinfo.xml}, agrégé par véhicule.
+
+\subsection{Équité par mouvement non garantie}
+
+La récompense n'agrège que le temps d'attente \emph{total} : rien n'y interdit de
+privilégier durablement un mouvement au détriment d'un autre. Le
+Tableau~\ref{tab:quantiles} montre qu'aucun véhicule n'est sacrifié en pratique --- le
+pire cas s'améliore lui aussi --- mais c'est une propriété \emph{constatée}, non une
+propriété \emph{garantie} par la formulation. L'abandon de la phase 1
+(Section~\ref{sec:phase1}) en est l'illustration : l'agent a supprimé un vert protégé
+parce qu'aucun terme de la récompense ne le protégeait.
+
+Une formulation destinée au déploiement devrait inscrire cette contrainte dans le
+problème plutôt que d'espérer qu'elle émerge : plafond d'attente par mouvement,
+garantie de service périodique, ou pénalité sur la variance inter-branches.
+
+\subsection{Portée limitée à un carrefour isolé}
+
+L'agent régule une intersection unique. Rien ne garantit que la politique apprise
+reste bénéfique en réseau : fluidifier un carrefour peut déplacer la congestion vers
+le suivant. La validation d'un déploiement réel exigerait une évaluation sur un
+corridor, avec une coordination inter-carrefours.
+
+\subsection{Absence de répétitions indépendantes}
+
+Les résultats proviennent d'\emph{une} exécution d'entraînement évaluée sur cinq
+graines. L'écart-type reporté mesure la variabilité \emph{du trafic}, non celle de
+\emph{l'apprentissage}. Trois à cinq entraînements avec des graines d'initialisation
+distinctes seraient nécessaires pour établir la stabilité de la méthode elle-même.
+L'ampleur de l'écart observé ($-50{,}7\,\%$ contre $\pm 0{,}6\text{ s}$ d'écart-type)
+rend toutefois improbable qu'il s'agisse d'un artefact.
+
+\subsection{Écart entre simulation et terrain}
+
+SUMO modélise un trafic homogène de véhicules particuliers. Le trafic réel de Thiès
+comporte deux-roues, charrettes et piétons traversant hors passage, dont les
+comportements ne sont pas représentés. Les gains rapportés valent dans le modèle ; ils
+constituent une borne optimiste pour le terrain.
+
+\section{Conclusion et perspectives}
+
+\subsection{Rappels théoriques}
+
+\begin{align}
+  \textbf{Équation de Bellman optimale} \quad & Q^{*}(s,a)=\mathbb{E}_{s'}\bigl[ r + \gamma \max_{a'} Q^{*}(s',a') \mid s,a\bigr] \\
+  \textbf{Cible du Double DQN} \quad & y_t = r_t + \gamma\, Q_{\bar\theta}\bigl(s_{t+1},\ \arg\max_{a'} Q_{\theta}(s_{t+1},a')\bigr)
+\end{align}
+
+Le découplage entre le réseau qui \emph{choisit} l'action ($\theta$) et celui qui
+l'\emph{évalue} ($\bar\theta$) atténue la surestimation systématique des valeurs $Q$
+propre au DQN classique.
+
+\subsection{Résultats établis}
+
+\begin{enumerate}
+    \item Le régulateur appris réduit le temps perdu par véhicule de
+          $\mathbf{50{,}7\,\%}$ face au feu fixe en place
+          ($31{,}5\text{ s} \rightarrow 15{,}5\text{ s}$), sur cinq graines de trafic
+          jamais rencontrées à l'entraînement.
+    \item L'attente moyenne par véhicule diminue de $\mathbf{62{,}2\,\%}$
+          ($23{,}8\text{ s} \rightarrow 9{,}0\text{ s}$).
+    \item Le gain n'est pas obtenu au détriment d'une minorité : l'agent domine à
+          \emph{tous} les quantiles, le véhicule le plus pénalisé attendant
+          $89\text{ s}$ contre $127\text{ s}$ sous le feu fixe.
+    \item Le caractère adaptatif est établi par la mesure et non par l'argument : la
+          durée d'une même phase varie de $15$ à $55\text{ s}$ (écart-type intra-phase
+          de $3{,}53\text{ s}$, contre $0{,}00\text{ s}$ pour le feu fixe), et l'agent
+          sert la branche la plus chargée dans $79{,}2\,\%$ des arbitrages.
+    \item Le contrôle effectif du feu par l'agent est vérifié par un test dédié, et
+          non supposé.
+    \item La baseline actionnée s'avère inférieure au feu fixe sur cette demande
+          asymétrique, ce qui délimite le domaine de validité du résultat.
+    \item L'agent a découvert que la phase 1 est redondante en capacité et l'a
+          supprimée --- gain réel, mais au prix du passage de tourne-à-gauche protégés
+          en permissifs, arbitrage qui relève de l'ingénieur et non de l'agent.
+\end{enumerate}
+
+\subsection{Travaux futurs}
+
+\begin{itemize}
+  \item Répéter l'entraînement avec plusieurs graines d'initialisation pour établir la
+        stabilité de la méthode, et non seulement celle d'un modèle.
+  \item Réintroduire l'équité par mouvement dans la formulation (vert protégé
+        périodique garanti, ou pénalité sur les conflits permissifs) et vérifier le
+        coût en performance de cette contrainte.
+  \item Étendre à un corridor de plusieurs carrefours coordonnés, pour vérifier que le
+        gain local ne se traduit pas par un report de congestion.
+  \item Éprouver la robustesse sur des scénarios dégradés : pic de demande, panne de
+        détecteur, arrivée de véhicule prioritaire.
+  \item Publier poids (\texttt{dqn\_best.pt}), journal d'entraînement et scripts
+        d'évaluation afin de permettre la reproduction indépendante des résultats.
+\end{itemize}
+
+\subsection{Reproductibilité}
+
+\begin{verbatim}
+py -3.14 -m rl.smoke_test                          # vérifie le contrôle du feu
+py -3.14 -m rl.train --episodes 150                # entraînement (~45 min)
+py -3.14 -m rl.evaluate --model outputs/dqn_best.pt  # tableau comparatif
+py -3.14 -m rl.adaptivity --seeds 7 13 21 42 77    # preuve d'adaptativité
+py -3.14 -m rl.demo --controller dqn --seed 7      # démonstration visuelle
+\end{verbatim}
+
+\paragraph{Avertissement de reproductibilité.} Les fichiers \texttt{tripinfo\_*.xml}
+du répertoire \texttt{outputs/} sont écrasés à chaque exécution, et
+\texttt{rl.train} réécrit \texttt{training\_log.csv} depuis zéro. Un artefact
+présent sur le disque ne correspond donc pas nécessairement au modèle courant : lors
+de la rédaction, des \texttt{tripinfo} antérieurs au remplacement de
+\texttt{dqn\_best.pt} donnaient $-32{,}3\,\%$ au lieu de $-50{,}7\,\%$. Toute
+vérification doit relancer \texttt{rl.evaluate} plutôt que relire les fichiers
+existants.
+
+\end{document}

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Baseline "feu actionné" : réseau identique à rl.sumocfg mais dont le feu
+     a été reconstruit par netconvert en mode "tls.default-type actuated".
+     Le vert est prolongé tant que la détection de véhicules le justifie
+     (minDur/maxDur). C'est la baseline sérieuse que le DQN doit battre. -->
+<sumoConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
+
+    <input>
+        <net-file value="osm.net.actuated.xml.gz"/>
+        <route-files value="net_demand.rou.xml"/>
+    </input>
+
+    <processing>
+        <ignore-route-errors value="true"/>
+        <time-to-teleport value="-1"/>
+    </processing>
+
+    <report>
+        <no-warnings value="true"/>
+        <no-step-log value="true"/>
+        <duration-log.statistics value="true"/>
+    </report>
+
+</sumoConfiguration>

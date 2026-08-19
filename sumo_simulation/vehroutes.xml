@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- generated on 2026-06-13T10:58:32.515348+00:00 by Eclipse SUMO sumo 1.27.0
+<sumoConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
+
+    <input>
+        <net-file value="C:\Users\bmd tech\Documents\project_feu_tricolore-1\2026-06-13-10-58-28\osm.net.xml.gz"/>
+        <route-files value="C:\Users\bmd tech\Documents\project_feu_tricolore-1\2026-06-13-10-58-28\trips.trips.xml"/>
+        <additional-files value="C:\Users\bmd tech\Documents\project_feu_tricolore-1\2026-06-13-10-58-28\osm_stops.add.xml"/>
+    </input>
+
+    <output>
+        <vehroute-output value="C:\Users\bmd tech\Documents\project_feu_tricolore-1\2026-06-13-10-58-28\vehroutes.xml"/>
+        <stop-output value="C:\Users\bmd tech\Documents\project_feu_tricolore-1\2026-06-13-10-58-28\stopinfos.xml"/>
+    </output>
+
+    <time>
+        <begin value="0.0"/>
+    </time>
+
+    <processing>
+        <ignore-route-errors value="true"/>
+        <time-to-teleport.disconnected value="0"/>
+        <default.departspeed value="0"/>
+    </processing>
+
+    <routing>
+        <device.rerouting.adaptation-interval value="0"/>
+    </routing>
+
+    <report>
+        <aggregate-warnings value="5"/>
+        <error-log value="C:\Users\bmd tech\Documents\project_feu_tricolore-1\2026-06-13-10-58-28\trips.trips.xml.errorlog"/>
+        <no-step-log value="true"/>
+    </report>
+
+</sumoConfiguration>
+-->
+
+<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
+</routes>
