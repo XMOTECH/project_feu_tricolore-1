@@ -25,6 +25,7 @@ import traci.constants as tc
 from . import config as C
 from .dqn import DQNAgent
 from .env import SumoEnv
+from .max_pressure import run_mp
 
 
 def parse_tripinfo(path):
@@ -112,10 +113,12 @@ def main():
     ap.add_argument("--seeds", type=int, nargs="*", default=C.SEED_EVAL)
     ap.add_argument("--out", type=str, default=C.OUTPUT_DIR)
     ap.add_argument("--skip-dqn", action="store_true")
+    ap.add_argument("--mp-mode", choices=["sum", "mean", "max"], default="max")
+    ap.add_argument("--mp-hysteresis", type=float, default=0.0)
     args = ap.parse_args()
     os.makedirs(args.out, exist_ok=True)
 
-    controllers = ["fixe", "actue"]
+    controllers = ["fixe", "actue", "mp"]
     if not args.skip_dqn and os.path.exists(args.model):
         controllers.append("dqn")
     elif not args.skip_dqn:
@@ -124,9 +127,12 @@ def main():
     results = {c: [] for c in controllers}
     for seed in args.seeds:
         for c in controllers:
-            m = (run_dqn(args.model, seed, args.episode_len, args.out)
-                 if c == "dqn"
-                 else run_baseline(c, seed, args.episode_len, args.out))
+            if c == "dqn":
+                m = run_dqn(args.model, seed, args.episode_len, args.out)
+            elif c == "mp":
+                m = run_mp(seed, args.episode_len, args.out, mode=args.mp_mode, hysteresis=args.mp_hysteresis)
+            else:
+                m = run_baseline(c, seed, args.episode_len, args.out)
             if m:
                 results[c].append(m)
                 print(f"  {c:<6} seed={seed:<3} timeLoss={m['timeLoss']:6.1f}s "
