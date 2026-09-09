@@ -3,7 +3,7 @@
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage[french]{babel}
-\usepackage{amsmath,amssymb,amsfonts,amsthm}
+\usepackage{amsmath,amssymb,amsfonts}
 \usepackage{booktabs,multirow,array}
 \usepackage{graphicx}
 \usepackage{cite}
@@ -18,9 +18,6 @@
 \usetikzlibrary{arrows.meta,positioning,shapes.geometric}
 \pgfplotsset{compat=1.18}
 
-\newtheorem{definition}{Définition}
-\newtheorem{property}{Propriété}
-
 \begin{document}
 
 \title{Contrôle Adaptatif de Trafic Urbain par Double Deep Q-Network~: Évaluation Multi-Graines et Diagnostic Microscopique Face aux Heuristiques de Transport sous Eclipse SUMO}
@@ -29,17 +26,17 @@
 \thanks{M. A. Ka est affilié au Département Informatique, UFR Sciences et Technologies, Université Iba Der Thiam de Thiès (UIDT), Thiès, Sénégal (courriel~: \texttt{mamadou.ka@uidt.sn}).}%
 }
 
-\markboth{IEEE Transactions on Intelligent Transportation Systems,~Vol.~XX, No.~X,~Septembre~2026}%
-{Ka : Contrôle Adaptatif de Trafic Urbain par Double DQN sous SUMO}
+\markboth{Rapport de recherche / Manuscrit technique, Septembre~2026}%
+{Ka : Contrôle adaptatif de trafic urbain par Double DQN sous SUMO}
 
 \maketitle
 
 \begin{abstract}
-La congestion récurrente aux carrefours routiers des agglomérations en développement rapide constitue un frein socio-économique majeur, exacerbé par la prédominance de feux à temporisation statique. Cet article propose un benchmark expérimental rigoureux évaluant un agent décisionnel fondé sur l'apprentissage par renforcement profond (\emph{Double Deep Q-Network}, DDQN) face aux trois paradigmes dominants du génie du trafic~: le plan fixe optimisé, la régulation actionnée par détection de lacune (\emph{actuated gap-out}) et la règle heuristique théorique Max-Pressure (Varaiya, 2013). Les expérimentations sont conduites sous le simulateur microscopique Eclipse SUMO sur la géométrie réelle d'une intersection majeure de la ville de Thiès (Sénégal), modélisée à partir de relevés OpenStreetMap. L'évaluation repose sur cinq graines stochastiques indépendantes évaluées chacune sur un horizon continu d'une heure ($3600\,\mathrm{s}$). Les résultats démontrent la supériorité de l'agent Double DQN, qui réduit le temps perdu moyen (\emph{timeLoss}) de $50{,}7\,\%$ ($15{,}5 \pm 0{,}6\,\mathrm{s}$ contre $31{,}5 \pm 0{,}5\,\mathrm{s}$ pour le plan fixe) et le temps d'attente à l'arrêt de $62{,}2\,\%$ ($9{,}0 \pm 0{,}5\,\mathrm{s}$ contre $23{,}8 \pm 0{,}4\,\mathrm{s}$), tout en maintenant le débit d'évacuation maximal ($889 \pm 21$ véhicules servis). En outre, une analyse microscopique approfondie met en lumière une pathologie critique de l'algorithme Max-Pressure naïf~: loin de souffrir d'oscillations excessives (\emph{thrashing}), celui-ci subit un verrouillage monopolistique sur l'axe majeur ($80{,}8\,\%$ du temps alloué à la Phase~2 et $0\,\%$ à la Phase~3), entraînant une famine sévère des voies secondaires et un refoulement en amont (\emph{spillback}) qui réduit le débit global de $34\,\%$. L'agent Double DQN résout spontanément cette famine en allouant $18{,}3\,\%$ du temps à la purge des mouvements secondaires, attestant d'une capacité d'arbitrage global supérieure aux règles gloutonnes locales.
+La régulation adaptative des feux de circulation (\emph{Adaptive Traffic Signal Control}, ATSC) vise à ajuster les temps de vert à la dynamique locale du trafic. Cet article présente une évaluation expérimentale rigoureuse d'un agent décisionnel fondé sur l'apprentissage par renforcement profond (\emph{Double Deep Q-Network}, DDQN) face à trois familles de contrôleurs~: le plan fixe d'origine du réseau (cycle de $78\,\mathrm{s}$), la régulation actionnée par détection de lacune (\emph{actuated gap-out}) et la règle heuristique Max-Pressure (Varaiya, 2013). Les simulations sont menées sous l'environnement microscopique Eclipse SUMO sur une modélisation du carrefour principal de Thiès (Sénégal), dérivée d'OpenStreetMap. L'évaluation repose sur cinq graines stochastiques indépendantes évaluées chacune sur un horizon continu de $3600\,\mathrm{s}$ (1 heure). Les résultats montrent que l'agent Double DQN réduit le temps perdu moyen (\emph{timeLoss}) de $50{,}7\,\%$ ($15{,}5 \pm 0{,}6\,\mathrm{s}$ contre $31{,}5 \pm 0{,}5\,\mathrm{s}$ pour le plan fixe) et le temps d'attente à l'arrêt à $9{,}0 \pm 0{,}5\,\mathrm{s}$ (contre $23{,}8 \pm 0{,}4\,\mathrm{s}$), tout en maintenant un débit d'évacuation stable ($\approx 889$ véhicules servis). En outre, un diagnostic microscopique approfondi sur la graine 7 révèle le mécanisme de dégradation de la variante naïve de Max-Pressure~: l'algorithme n'effectue que 91 commutations (écartant l'hypothèse d'une oscillation excessive ou \emph{thrashing}), mais alloue $80{,}8\,\%$ du vert à la Phase~2 et $0\,\%$ à la Phase~3. Cette famine de phase engendre une saturation des voies secondaires et un refoulement en amont (\emph{spillback}) bloquant l'insertion de 207 véhicules, ce qui réduit le débit achevé de plus de $30\,\%$ ($\approx 580$ véhicules). À l'inverse, l'agent Double DQN alloue $18{,}3\,\%$ du temps vert à la Phase~3, purgeant les files secondaires avant l'apparition de blocages d'insertion.
 \end{abstract}
 
 \begin{IEEEkeywords}
-Systèmes de Transport Intelligents (ITS), Régulation Adaptative des Feux (ATSC), Apprentissage par Renforcement Profond, Double DQN, Max-Pressure, Phénomène de Famine, Eclipse SUMO.
+Systèmes de Transport Intelligents (ITS), Contrôle Adaptatif des Feux, Apprentissage par Renforcement Profond, Double DQN, Max-Pressure, Famine de Phase, Eclipse SUMO.
 \end{IEEEkeywords}
 
 \IEEEpeerreviewmaketitle
@@ -47,162 +44,160 @@ Systèmes de Transport Intelligents (ITS), Régulation Adaptative des Feux (ATSC
 \section{Introduction}
 \label{sec:intro}
 
-\IEEEPARstart{D}{ans} les métropoles des pays émergents et particulièrement en Afrique subsaharienne, l'urbanisation accélérée s'accompagne d'une densification critique des flux motorisés sur un réseau viaire souvent contraint et peu maillé~\cite{haydari2022deep}. À Thiès (Sénégal), deuxième pôle économique du pays, les carrefours à niveau concentrent l'essentiel des congestions urbaines, provoquant retards massifs, surconsommation d'hydrocarbures et pollution atmosphérique accrue.
+\IEEEPARstart{L}{a} gestion des intersections routières représente un enjeu critique pour l'efficacité des réseaux de transport urbain, particulièrement dans les villes à croissance démographique rapide où le réseau viaire présente peu d'itinéraires alternatifs~\cite{haydari2022deep}. À Thiès (Sénégal), les carrefours à niveau concentrent une part déterminante des retards quotidiens.
 
-Historiquement, la régulation des intersections repose sur des plans de feux à temps fixe (\emph{Fixed-Time}), calibrés selon des méthodes conventionnelles telles que celle de Webster~\cite{webster1958traffic}. Bien que robustes et simples d'exploitation, ces plans statiques sont structurellement incapables de s'ajuster aux fluctuations stochastiques de la demande (pics asymétriques, incidents de voirie, arrivées en peloton). Les systèmes industriels adaptatifs coordonnés, tels que SCATS~\cite{lowrie1990scats} ou SCOOT~\cite{hunt1981scoot}, requièrent quant à eux une instrumentation lourde et intrusive de la chaussée (boucles magnétiques inductives tous les 50 mètres, réseaux de transmission filaires dédiés) ainsi que des coûts récurrents de maintenance prohibitifs pour les collectivités locales.
+La régulation de ces carrefours s'appuie traditionnellement sur des plans à temps fixe (\emph{Fixed-Time}), dont les durées de phases sont calées sur des flux moyens historiques. Bien que stables et éprouvés, ces programmes statiques manquent de flexibilité face aux variations intrajournalières et aux asymétries de charges ponctuelles. Par ailleurs, le déploiement de systèmes industriels coordonnés centralisés (tels que SCATS~\cite{lowrie1990scats} ou SCOOT~\cite{hunt1981scoot}) est fréquemment freiné dans les agglomérations d'Afrique subsaharienne par les coûts d'infrastructure (boucles électromagnétiques sous chaussée, réseaux filaires de télécommunication dédiés et contrats de maintenance associés).
 
-Ce constat a suscité un engouement croissant pour les approches fondées sur l'apprentissage par renforcement profond (\emph{Deep Reinforcement Learning}, DRL)~\cite{wei2018intellilight,wei2019presslight,chen2020toward,zhang2020pdlight}. En observant l'état local du trafic via des capteurs visuels peu onéreux (caméras intelligentes \emph{Edge AI}), un agent autonome peut apprendre une politique optimale d'allocation des feux sans nécessiter de modèle paramétrique explicite de la demande.
-
-Cependant, comme le soulignent plusieurs revues critiques récentes de la littérature~\cite{wei2021survey,zhao2024survey}, une majorité écrasante des contributions récentes en DRL pèche par un manque de rigueur méthodologique~:
+Dans ce cadre, l'apprentissage par renforcement profond (\emph{Deep Reinforcement Learning}, DRL) offre un cadre méthodologique permettant d'ajuster localement les feux à partir d'observations directes du trafic~\cite{wei2018intellilight,wei2019presslight,chen2020toward,zhang2020pdlight}. Néanmoins, les revues méthodologiques récentes soulignent des limites récurrentes dans les protocoles d'évaluation du domaine~\cite{wei2021survey,zhao2024survey}~:
 \begin{enumerate}
-    \item \textbf{Baselines limitées~:} Les performances de l'agent ne sont que trop souvent comparées au seul plan fixe, ignorant les contrôleurs actionnés (\emph{actuated control}) et les heuristiques théoriques dominantes de la recherche en transport, en premier lieu l'algorithme Max-Pressure formulé par Varaiya~\cite{varaiya2013max}.
-    \item \textbf{Absence de diagnostic comportemental microscopique~:} L'analyse se borne fréquemment à rapporter une courbe de récompense cumulative ou un gain macroscopique global, sans disséquer les mécanismes sous-jacents de sélection de phase (durée de vert effectif, fréquence de commutation, gestion des tournes critiques).
-    \item \textbf{Évaluation sur environnements idéalisés~:} Les topologies de test sont souvent réduites à des grilles 2D symétriques et synthétiques, masquant les effets de goulot d'étranglement propres aux carrefours réels asymétriques.
+    \item Une comparaison souvent restreinte au seul plan fixe, négligeant les régulateurs actionnés et les règles heuristiques issues du génie du trafic, notamment Max-Pressure~\cite{varaiya2013max}.
+    \item Une analyse souvent cantonnée à la courbe de récompense cumulative, sans caractérisation microscopique des décisions (durées effectives par phase, fréquence des commutations, identification d'éventuelles famines de mouvements).
+    \item Une prédominance d'environnements synthétiques simplifiés (grilles symétriques théoriques), qui masquent les spécificités des carrefours asymétriques réels.
 \end{enumerate}
 
-Pour combler ces lacunes, cet article propose une étude comparative et comportementale rigoureuse. Nos contributions se déclinent comme suit~:
+Le présent travail propose une étude comparative rigoureuse sur un carrefour isolé réel modélisé sous Eclipse SUMO. Nos contributions sont les suivantes~:
 \begin{itemize}
-    \item Nous formulons le contrôle d'une intersection réelle à 8 voies de la ville de Thiès (Sénégal) sous la forme d'un Processus de Décision Markovien (MDP) compact à 13 dimensions, avec une fonction de récompense différentielle sans pénalité arbitraire.
-    \item Nous déployons et entraînons un agent \textbf{Double DQN} (DDQN) intégrant des masques de contraintes sécuritaires (verts minimum et maximum, phases jaunes d'inter-vert).
-    \item Nous confrontons cet agent à trois familles de contrôleurs~: le plan fixe de référence (Webster), le régulateur actionné par détection de trou de trafic (\emph{gap-out}) et deux variantes d'agrégation de l'algorithme Max-Pressure (\emph{Sum} et \emph{Max}).
-    \item Nous démontrons, par une analyse microscopique des trajectoires de simulation sous Eclipse SUMO, que le dysfonctionnement de Max-Pressure n'est pas imputable à des oscillations intempestives (\emph{thrashing}), mais à un phénomène pernicieux de \textbf{famine de phase} (\emph{phase starvation}) conduisant à un refoulement amont (\emph{spillback}) que l'agent Double DQN résout spontanément.
+    \item Nous formulons le contrôle d'une intersection à 8 voies de la ville de Thiès sous la forme d'un Processus de Décision Markovien (MDP) compact à 13 dimensions, avec une fonction de récompense différentielle sans coefficient de pénalité arbitraire.
+    \item Nous déployons un agent Double DQN avec masquage d'actions pour garantir le respect des contraintes de sécurité (vert minimal $g_{\min}$, vert maximal $g_{\max}$, temps jaune $y$).
+    \item Nous évaluons cet agent sur 5 graines stochastiques face au plan fixe d'origine (cycle de $78\,\mathrm{s}$), à un régulateur actionné (\emph{gap-out}) et à deux modes d'agrégation de Max-Pressure (\emph{Sum} et \emph{Max}).
+    \item Nous documentons et analysons le mécanisme de famine de phase subi par la variante Max-Pressure Somme sur cette configuration, en démontrant que la dégradation provient d'un refoulement amont (\emph{spillback}) et non d'une instabilité de commutation (\emph{thrashing}).
 \end{itemize}
 
-Le reste de cet article est structuré comme suit. La Section~\ref{sec:related} passe en revue l'état de l'art. La Section~\ref{sec:formulation} expose la formulation mathématique du problème et des contrôleurs. La Section~\ref{sec:algo} détaille l'algorithme Double DQN et son architecture neuronale. La Section~\ref{sec:setup} décrit le protocole expérimental sous SUMO. La Section~\ref{sec:results} présente les résultats quantitatifs multi-graines et l'analyse microscopique de la famine. Enfin, la Section~\ref{sec:conclusion} conclut et ouvre sur les perspectives.
+L'article est organisé comme suit. La Section~\ref{sec:related} résume l'état de l'art. La Section~\ref{sec:formulation} expose la formulation du carrefour et des modèles. La Section~\ref{sec:algo} détaille l'algorithme Double DQN. La Section~\ref{sec:setup} décrit le protocole expérimental sous SUMO. La Section~\ref{sec:results} présente les résultats et l'analyse microscopique. La Section~\ref{sec:deployment} discute les perspectives d'implémentation, et la Section~\ref{sec:conclusion} conclut.
 
 \section{État de l'Art}
 \label{sec:related}
 
-\subsection{Méthodes Traditionnelles et Heuristiques de Transport}
-La méthode de Webster~\cite{webster1958traffic} constitue le socle du dimensionnement des cycles de feux à temps fixe. Elle calcule la durée optimale de cycle $C^*$ en minimisant le retard total sous l'hypothèse d'arrivées poissoniennes stationnaires. En présence de variabilité intrajournalière, la régulation actionnée (\emph{Actuated Control}) ajuste dynamiquement le maintien du feu vert par détection locale~: tant que les véhicules se succèdent à un intervalle inférieur à un seuil de passage critique ($\Delta t_{\text{gap}}$), le vert est prolongé jusqu'à concurrence d'un plafond $g_{\max}$~\cite{day2016detector}.
+\subsection{Régulation Classique et Heuristiques de Transport}
+La méthode de Webster~\cite{webster1958traffic} constitue la référence historique pour le calcul théorique de la durée de cycle optimale sur la base de débits de saturation et de trafics moyens. En exploitation dynamique, la régulation actionnée (\emph{Actuated Control}) prolonge le vert tant que l'écart temporel mesuré entre deux véhicules consécutifs demeure inférieur à un seuil de passage critique ($\Delta t_{\text{gap}}$), sous réserve d'un plafond temporel $g_{\max}$~\cite{day2016detector}.
 
-Sur le plan théorique, l'algorithme \textbf{Max-Pressure} (MP) introduit par Varaiya~\cite{varaiya2013max} et étendu par Lioris \emph{et al.}~\cite{lioris2016max} a marqué un tournant. Inspiré du contrôle par contre-pression dans les réseaux de télécommunications, MP prouve mathématiquement qu'en sélectionnant à chaque instant la phase qui maximise la différence de files d'attente entre les voies amont et aval, le réseau de trafic demeure globalement stable (les files n'explosent pas à l'infini) dès lors que la demande se situe dans la région de capacité admissible (\emph{capacity region}). Cependant, comme nous le mettrons en évidence dans cette étude, les garanties asymptotiques de Max-Pressure reposent sur des hypothèses continues (\emph{store-and-forward}) qui se révèlent vulnérables en environnement microscopique discret à carrefour isolé lorsque les longueurs de stockage et les structures de voies sont asymétriques.
+L'algorithme Max-Pressure, formalisé par Varaiya~\cite{varaiya2013max} et analysé en détail par Lioris \emph{et al.}~\cite{lioris2016max}, fournit une règle de contrôle décentralisée assurant la stabilité d'un réseau sous l'hypothèse de modèles continus dits \emph{store-and-forward}. En sélectionnant la phase qui maximise le différentiel de files entre voies amont et voies aval, l'algorithme garantit la bornitude des files d'attente si la demande appartient à la région de capacité du réseau. Toutefois, comme nous le mettons en évidence dans cette étude, l'application directe de Max-Pressure sur un carrefour asymétrique isolé avec files d'attente discrètes peut conduire à des blocages si l'agrégation de pression favorise systématiquement les mouvements principaux.
 
 \subsection{Apprentissage par Renforcement Profond pour l'ATSC}
-L'avènement du Deep Q-Network (DQN)~\cite{mnih2015human} a catalysé son application au contrôle adaptatif des feux (\emph{Adaptive Traffic Signal Control}, ATSC)~\cite{genders2016using}. Wei \emph{et al.} ont posé les fondations du domaine avec \textbf{IntelliLight}~\cite{wei2018intellilight}, démontrant qu'un agent DQN alimenté par des états continus (files, vitesses, positions) surpasse significativement les heuristiques traditionnelles sur des intersections réelles.
+L'introduction des réseaux Q profonds (DQN)~\cite{mnih2015human} a permis d'aborder le contrôle de feux sans modèle analytique explicite de la demande~\cite{genders2016using}. IntelliLight~\cite{wei2018intellilight} a illustré l'apport d'un état continu combinant files d'attente, densités et positions de véhicules.
 
-Pour combler le fossé entre la théorie du transport et le DRL, Wei \emph{et al.} ont proposé \textbf{PressLight}~\cite{wei2019presslight}, intégrant la formulation de la pression de Varaiya au sein même de la fonction de récompense de l'agent. Parallèlement, Chen \emph{et al.} ont développé \textbf{MPLight}~\cite{chen2020toward}, combinant Max-Pressure et factorisation d'état pour le contrôle décentralisé à grande échelle. Récemment, Zhang \emph{et al.} ont introduit \textbf{PDLight}~\cite{zhang2020pdlight}, modifiant la mesure de pression pour intégrer explicitement la capacité résiduelle des voies d'évacuation aval (\emph{Pressure with Remaining Capacity of Outgoing Lane}, PRCOL) afin de juguler les blocages par refoulement. 
+Plusieurs travaux ont cherché à rapprocher le DRL des garanties de la théorie du transport. PressLight~\cite{wei2019presslight} adopte la notion de pression dans la fonction de récompense pour orienter l'apprentissage vers la stabilité du réseau. MPLight~\cite{chen2020toward} associe Max-Pressure et factorisation d'état pour le contrôle coordonné à large échelle. PDLight~\cite{zhang2020pdlight} propose un indicateur de pression pondéré par la capacité résiduelle des voies aval (\emph{PRCOL}) afin de prévenir les engorgements en sortie d'intersection.
 
-Notre étude se distingue de ces travaux par une analyse comportementale rigoureuse d'un agent Double DQN face aux variantes de Max-Pressure sur un carrefour africain réel sous SUMO, en décortiquant les micro-mécanismes de famine temporelle et spatiale.
+Notre étude s'inscrit dans cette lignée en proposant une évaluation rigoureuse en environnement microscopique réel (Thiès) avec un agent Double DQN standard, en caractérisant précisément les conditions d'arbitrage de vert par rapport aux heuristiques locales de transport.
 
 \section{Formulation du Problème et des Modèles}
 \label{sec:formulation}
 
 \subsection{Topologie de l'Intersection et Notations}
-Considérons une intersection routière isolée à niveau (Figure~\ref{fig:topology_graph}). Soit $\mathcal{L}_{\text{in}} = \{l_1, \dots, l_M\}$ l'ensemble des voies d'entrée amont et $\mathcal{L}_{\text{out}} = \{l'_1, \dots, l'_N\}$ l'ensemble des voies de sortie aval. Un mouvement de trafic $m = (l, l')$ représente la trajectoire autorisée d'une voie entrante $l \in \mathcal{L}_{\text{in}}$ vers une voie sortante $l' \in \mathcal{L}_{\text{out}}$.
+Considérons une intersection isolée à niveau comportant quatre branches d'accès (Figure~\ref{fig:topology_graph}). Soit $\mathcal{L}_{\text{in}} = \{l_1, \dots, l_8\}$ l'ensemble des 8 voies d'entrée amont (deux voies par branche) et $\mathcal{L}_{\text{out}}$ l'ensemble des voies de sortie aval. Un mouvement de trafic $m = (l, l')$ correspond à une trajectoire autorisée depuis une voie entrante $l \in \mathcal{L}_{\text{in}}$ vers une voie sortante $l' \in \mathcal{L}_{\text{out}}$.
 
 \begin{figure}[t]
 \centering
-\begin{tikzpicture}[node distance=1.4cm, auto, >=Latex, thick]
-    \node [draw, rectangle, fill=blue!10, rounded corners, minimum width=2.8cm, minimum height=0.9cm, align=center] (in_north) {\small \textbf{Approche Nord} \\ \footnotesize 2 voies (Ligne 1)};
-    \node [draw, rectangle, fill=blue!10, rounded corners, minimum width=2.8cm, minimum height=0.9cm, align=center, below=1.8cm of in_north] (in_south) {\small \textbf{Approche Sud} \\ \footnotesize 2 voies (Ligne 2)};
-    \node [draw, rectangle, fill=blue!10, rounded corners, minimum width=2.2cm, minimum height=0.9cm, align=center, left=1.2cm of in_north, yshift=-1.35cm] (in_west) {\small \textbf{Approche Ouest} \\ \footnotesize 2 voies};
-    \node [draw, rectangle, fill=blue!10, rounded corners, minimum width=2.2cm, minimum height=0.9cm, align=center, right=1.2cm of in_north, yshift=-1.35cm] (in_east) {\small \textbf{Approche Est} \\ \footnotesize 2 voies};
+\begin{tikzpicture}[node distance=1.3cm, auto, >=Latex, thick]
+    \node [draw, rectangle, fill=blue!10, rounded corners, minimum width=2.6cm, minimum height=0.8cm, align=center] (in_north) {\small \textbf{Branche Nord} \\ \footnotesize 2 voies (Ligne 1)};
+    \node [draw, rectangle, fill=blue!10, rounded corners, minimum width=2.6cm, minimum height=0.8cm, align=center, below=1.7cm of in_north] (in_south) {\small \textbf{Branche Sud} \\ \footnotesize 2 voies (Ligne 2)};
+    \node [draw, rectangle, fill=blue!10, rounded corners, minimum width=2.1cm, minimum height=0.8cm, align=center, left=1.0cm of in_north, yshift=-1.25cm] (in_west) {\small \textbf{Branche Ouest} \\ \footnotesize 2 voies};
+    \node [draw, rectangle, fill=blue!10, rounded corners, minimum width=2.1cm, minimum height=0.8cm, align=center, right=1.0cm of in_north, yshift=-1.25cm] (in_east) {\small \textbf{Branche Est} \\ \footnotesize 2 voies};
 
-    \node [draw, circle, fill=red!20, inner sep=2pt, minimum size=1.3cm, align=center] (junction) at ([yshift=-0.9cm]in_north.south) {\textbf{Junction} \\ \scriptsize $J_0$};
+    \node [draw, circle, fill=red!20, inner sep=2pt, minimum size=1.2cm, align=center] (junction) at ([yshift=-0.85cm]in_north.south) {\textbf{N{\oe}ud} \\ \scriptsize $J_0$};
 
     \draw [<->, color=black!70] (in_north) -- (junction);
     \draw [<->, color=black!70] (in_south) -- (junction);
     \draw [<->, color=black!70] (in_west) -- (junction);
     \draw [<->, color=black!70] (in_east) -- (junction);
 \end{tikzpicture}
-\caption{Topologie schématique de l'intersection de Thiès (8 voies d'entrée réparties sur 4 branches cardinales avec mouvements directs et tourne-à-gauche protégés).}
+\caption{Schéma de principe du carrefour de Thiès modélisé sous SUMO (4 branches d'accès comprenant chacune 2 voies d'entrée et 2 voies de sortie).}
 \label{fig:topology_graph}
 \end{figure}
 
-L'intersection est régulée par un ensemble fini de phases de feux verts non conflictuelles $\mathcal{P} = \{p_0, p_1, p_2, p_3\}$, où chaque phase $p \in \mathcal{P}$ autorise simultanément un sous-ensemble de mouvements non sécants $\mathcal{M}(p)$~:
+Le carrefour est piloté par un ensemble de quatre phases vertes non conflictuelles $\mathcal{P} = \{p_0, p_1, p_2, p_3\}$~:
 \begin{itemize}
-    \item \textbf{Phase 0~:} Circulation directe sur l'axe majeur (Nord-Sud) ;
-    \item \textbf{Phase 1~:} Tourne-à-gauche protégé sur l'axe majeur ;
-    \item \textbf{Phase 2~:} Circulation directe sur l'axe secondaire (Est-Ouest) ;
+    \item \textbf{Phase 0~:} Mouvements directs sur l'axe principal (Nord-Sud) ;
+    \item \textbf{Phase 1~:} Tourne-à-gauche protégé sur l'axe principal ;
+    \item \textbf{Phase 2~:} Mouvements directs sur l'axe secondaire (Est-Ouest) ;
     \item \textbf{Phase 3~:} Tourne-à-gauche protégé sur l'axe secondaire.
 \end{itemize}
-Toute transition d'une phase active $p$ vers une phase distincte $p'$ impose l'insertion systématique d'une phase de dégagement jaune de durée $y = 3\,\mathrm{s}$.
+Tout changement de phase impose une phase jaune intermédiaire de dégagement de durée $y = 3\,\mathrm{s}$.
 
 \subsection{Formulation de l'Heuristique Max-Pressure}
-Dans le cadre d'un carrefour isolé où l'évacuation sur les voies aval $\mathcal{L}_{\text{out}}$ n'est pas entravée par une intersection adjacente, la pression $P_m(t)$ d'un mouvement $m$ correspond directement au nombre de véhicules arrêtés ou en attente $x_l(t)$ sur sa voie entrante d'origine $l$~:
+Pour un carrefour isolé où les voies aval $\mathcal{L}_{\text{out}}$ disposent d'un écoulement libre, la pression $P_m(t)$ d'un mouvement $m$ est assimilée au nombre de véhicules arrêtés $x_l(t)$ sur sa voie entrante $l$~:
 \begin{equation}
 P_m(t) = x_l(t), \quad \forall m = (l, l').
 \end{equation}
-La pression globale d'une phase candidate $p \in \mathcal{P}$ est alors calculée par agrégation des pressions de l'ensemble de ses mouvements autorisés $\mathcal{M}(p)$. Nous évaluons deux fonctions d'agrégation~:
+La pression globale d'une phase $p$ est calculée sur l'ensemble de ses mouvements autorisés $\mathcal{M}(p)$ selon deux variantes d'agrégation~:
 \begin{equation}
 \label{eq:mp_sum}
-\text{Mode Somme (Sum) : } P_{\text{sum}}(p, t) = \sum_{m \in \mathcal{M}(p)} x_{l(m)}(t),
+\text{Variante Somme (MP-Sum) : } P_{\text{sum}}(p, t) = \sum_{m \in \mathcal{M}(p)} x_{l(m)}(t),
 \end{equation}
 \begin{equation}
 \label{eq:mp_max}
-\text{Mode Maximum (Max) : } P_{\text{max}}(p, t) = \max_{m \in \mathcal{M}(p)} x_{l(m)}(t).
+\text{Variante Maximum (MP-Max) : } P_{\text{max}}(p, t) = \max_{m \in \mathcal{M}(p)} x_{l(m)}(t).
 \end{equation}
-À chaque instant de décision $t$, l'algorithme Max-Pressure sélectionne la phase d'indice~:
+À chaque pas de décision, la phase retenue est~:
 \begin{equation}
 a_{\text{MP}}^*(t) = \arg\max_{p \in \mathcal{A}_{\text{valid}}(t)} P(p, t),
 \end{equation}
-où $\mathcal{A}_{\text{valid}}(t)$ restreint le choix de l'action afin de garantir le respect strict du temps de vert minimal de sécurité ($g_{\min} = 10\,\mathrm{s}$) et du plafond maximal ($g_{\max} = 60\,\mathrm{s}$).
+où $\mathcal{A}_{\text{valid}}(t)$ restreint le choix pour respecter un vert minimal $g_{\min} = 10\,\mathrm{s}$ et un vert maximal $g_{\max} = 60\,\mathrm{s}$.
 
-\subsection{Formulation en Processus de Décision Markovien (MDP)}
-Nous modélisons le problème de contrôle sous la forme d'un Processus de Décision Markovien défini par le quintuplet $\langle \mathcal{S}, \mathcal{A}, \mathcal{P}_{ss'}, \mathcal{R}, \gamma \rangle$~:
+\subsection{Formulation en Processus de Décision Markovien}
+Le contrôle adaptatif est modélisé par un MDP défini par le tuple $\langle \mathcal{S}, \mathcal{A}, \mathcal{P}_{ss'}, \mathcal{R}, \gamma \rangle$~:
 
 \subsubsection{Espace des États (Observation)}
-Le vecteur d'observation $\mathbf{s}_t \in \mathbb{R}^{13}$ capturé par l'agent à l'instant de décision $t$ est structuré en quatre sous-groupes d'attributs continus normalisés dans l'intervalle $[0, 1]$~:
+Le vecteur d'observation $\mathbf{s}_t \in \mathbb{R}^{13}$ capturé à l'instant $t$ est défini par~:
 \begin{equation}
 \mathbf{s}_t = \big[ \mathbf{q}_t^{\top}, \, \mathbf{k}_t^{\top}, \, \mathbf{e}_t^{\top}, \, \delta_t \big]^{\top} \in \mathbb{R}^{13},
 \end{equation}
 où~:
 \begin{itemize}
-    \item $\mathbf{q}_t = [q_0, q_1, q_2, q_3]^{\top} \in [0, 1]^4$ quantifie les longueurs de file normalisées sur les quatre approches d'entrée, où $q_i = \min(n_{\text{stop}, i} / Q_{\max}, 1{,}0)$ avec un seuil de saturation fixé à $Q_{\max} = 20$ véhicules arrêtés ($v < 0{,}1\,\mathrm{m/s}$).
-    \item $\mathbf{k}_t = [k_0, k_1, k_2, k_3]^{\top} \in [0, 1]^4$ mesure les densités spatiales normalisées d'occupation de la chaussée, $k_i = n_{\text{tot}, i} / K_{\text{cap}, i}$, où $K_{\text{cap}, i} = L_i / 7{,}5\,\mathrm{m}$ représente la capacité physique théorique de stockage de la voie $i$ de longueur $L_i$.
-    \item $\mathbf{e}_t \in \{0, 1\}^4$ est un encodage \emph{One-Hot} désignant la phase verte actuellement active ($e_j = 1$ si la phase $j$ est au vert, $0$ sinon).
-    \item $\delta_t \in \{0, 1\}$ est un booléen de garde sécuritaire valant $1$ si la phase en cours a atteint la durée minimale réglementaire ($t_{\text{green}} \ge g_{\min}$), autorisant une transition, et $0$ dans le cas contraire.
+    \item $\mathbf{q}_t = [q_0, q_1, q_2, q_3]^{\top} \in [0, 1]^4$ regroupe les longueurs de file normalisées sur les 4 branches (somme des voies par approche), avec $q_i = \min(n_{\text{stop}, i} / Q_{\max}, 1{,}0)$ et $Q_{\max} = 10{,}0$ véhicules arrêtés ($v < 0{,}1\,\mathrm{m/s}$).
+    \item $\mathbf{k}_t = [k_0, k_1, k_2, k_3]^{\top} \in [0, 1]^4$ correspond aux densités moyennes normalisées par approche.
+    \item $\mathbf{e}_t \in \{0, 1\}^4$ est un encodage \emph{One-Hot} de la phase verte en cours ($e_j = 1$ si la phase $j$ est active).
+    \item $\delta_t \in \{0, 1\}$ indique si la phase en cours a atteint le vert minimal requis ($t_{\text{green}} \ge g_{\min}$), autorisant un changement de phase.
 \end{itemize}
 
 \subsubsection{Espace des Actions}
-L'espace des actions discrètes est défini par l'indexation directe des phases vertes autorisées~:
+L'ensemble des actions possibles correspond aux indices des phases vertes~:
 \begin{equation}
-\mathcal{A} = \{0, 1, 2, 3\},
+\mathcal{A} = \{0, 1, 2, 3\}.
 \end{equation}
-où choisir $a_t = p$ ordonne à l'automate d'engager ou de maintenir la phase $p$. Si $a_t \neq a_{t-1}$, le simulateur déclenche automatiquement une phase de transition jaune de $y = 3\,\mathrm{s}$ avant d'activer le vert de la phase $a_t$.
+Choisir $a_t = p$ maintient la phase $p$ ou engage la transition jaune de $3\,\mathrm{s}$ vers $p$ si $a_t \neq a_{t-1}$.
 
 \subsubsection{Fonction de Récompense}
-La fonction de récompense est conçue pour pénaliser directement l'accumulation de retards sans introduire de pondérations heuristiques instables. Elle est définie comme la variation différentielle du temps d'attente cumulé global $W(t) = \sum_{v \in \mathcal{V}(t)} w_v(t)$ de l'ensemble des véhicules présents sur l'intersection~:
+Conformément à l'implémentation de l'environnement, la récompense à l'étape $t$ est définie par la variation différentielle du temps d'attente cumulé global $W(t)$ mesuré sur le carrefour~:
 \begin{equation}
 \label{eq:reward}
-r_t = \frac{W(t) - W(t + \Delta t_{\text{step}})}{100}.
+r_t = \frac{W(t) - W(t + \Delta t)}{100{,}0},
 \end{equation}
-Cette formulation confère deux propriétés mathématiques fondamentales~:
-\begin{property}
-Toute résorption nette du temps d'attente ($W(t + \Delta t) < W(t)$) produit une récompense positive, alignant l'agent sur la maximisation du débit de sortie.
-\end{property}
-\begin{property}
-Le coût d'inter-vert induit par les phases jaunes se trouve naturellement pénalisé dans la fonction de valeur sans artifice externe~: commuter de phase bloque temporairement le carrefour pendant $3\,\mathrm{s}$, induisant une hausse transitoire de $W(t)$ qui pénalise mécaniquement les changements de phase futiles.
-\end{property}
+où $W(t) = \sum_{v \in \mathcal{V}(t)} w_v(t)$ est la somme des temps d'attente individuels des véhicules présents.
+
+Cette formulation implique directement deux conséquences pratiques~:
+\begin{itemize}
+    \item Une résorption nette de l'attente ($W(t+\Delta t) < W(t)$) se traduit par une récompense positive.
+    \item Le coût d'inter-vert induit par les feux jaunes est répercuté de façon naturelle sur le retour de l'agent~: la coupure de trafic pendant $3\,\mathrm{s}$ augmente temporairement $W(t)$, réduisant la récompense sans nécessiter de pénalité ad-hoc.
+\end{itemize}
 
 \section{Algorithme Double DQN et Architecture}
 \label{sec:algo}
 
-\subsection{Découplage de Bellman et Réseau de Valeur}
-Dans le cadre classique du Q-learning profond (DQN)~\cite{mnih2015human}, le biais de maximisation systématique $\max_{a'} Q(s', a'; \boldsymbol{\theta})$ tend à surestimer sévèrement les valeurs $Q$, entraînant une dégradation des politiques en environnement stochastique. L'algorithme Double DQN~\cite{van2016deep} élimine ce biais en découplant la sélection de l'action optimale de son évaluation~:
+\subsection{Principe du Double Q-Learning}
+Dans le Q-learning standard, l'opérateur de maximisation sur les valeurs Q estimées tend à surestimer les retours attendus en environnement stochastique. L'algorithme Double DQN~\cite{van2016deep} atténue ce biais en utilisant le réseau principal pour la sélection de l'action et le réseau cible pour son évaluation~:
 \begin{equation}
 \label{eq:target_double_dqn}
 Y_t^{\text{DoubleQ}} = r_t + \gamma \, Q\big(s_{t+1}, \, \arg\max_{a'} Q(s_{t+1}, a'; \boldsymbol{\theta}_t); \, \boldsymbol{\theta}_t^-\big),
 \end{equation}
-où $\boldsymbol{\theta}_t$ désigne les paramètres du réseau de neurones en ligne (\emph{Online Network}) et $\boldsymbol{\theta}_t^-$ représente les poids du réseau cible (\emph{Target Network}), gelés et mis à jour périodiquement toutes les $K_{\text{target}}$ itérations.
+où $\boldsymbol{\theta}_t$ représente les paramètres du réseau principal et $\boldsymbol{\theta}_t^-$ ceux du réseau cible.
 
-L'optimisation des paramètres $\boldsymbol{\theta}$ est réalisée par descente de gradient stochastique sur la fonction de perte quadratique moyenne (MSE)~:
+L'optimisation repose sur la minimisation de la perte de Huber (\emph{smooth L1 loss}), plus tolérante aux valeurs aberrantes que l'erreur quadratique standard~:
 \begin{equation}
 \label{eq:loss}
-\mathcal{L}(\boldsymbol{\theta}) = \mathbb{E}_{(s, a, r, s') \sim \mathcal{D}} \left[ \left( Y^{\text{DoubleQ}} - Q(s, a; \boldsymbol{\theta}) \right)^2 \right],
+\mathcal{L}(\boldsymbol{\theta}) = \mathbb{E}_{(s, a, r, s') \sim \mathcal{D}} \left[ \ell_{\text{Huber}}\big(Y^{\text{DoubleQ}} - Q(s, a; \boldsymbol{\theta})\big) \right],
 \end{equation}
-où $\mathcal{D}$ désigne le tampon d'expérience (\emph{Replay Buffer}) d'une capacité de $N_{\text{buffer}} = 50\,000$ transitions.
+avec un tampon d'expérience $\mathcal{D}$ d'une capacité de $50\,000$ transitions. Le réseau cible est synchronisé par mise à jour progressive (\emph{soft update})~: $\boldsymbol{\theta}^- \leftarrow \tau \boldsymbol{\theta} + (1 - \tau) \boldsymbol{\theta}^-$ avec $\tau = 0{,}005$.
 
-\subsection{Architecture Neuronale et Masquage d'Actions}
-L'architecture du réseau de valeur est un Perceptron Multicouche (MLP) fully-connected compact et efficient, adapté au calcul embarqué sur microprocesseur de voirie~:
+\subsection{Architecture Neuronale et Contraintes de Sécurité}
+Le réseau de valeur est un perceptron multicouche à deux couches cachées de 64 neurones~:
 \begin{align}
 \mathbf{h}_1 &= \text{ReLU}(\mathbf{W}_1 \mathbf{s} + \mathbf{b}_1), \quad \mathbf{W}_1 \in \mathbb{R}^{64 \times 13}, \\
 \mathbf{h}_2 &= \text{ReLU}(\mathbf{W}_2 \mathbf{h}_1 + \mathbf{b}_2), \quad \mathbf{W}_2 \in \mathbb{R}^{64 \times 64}, \\
 \mathbf{Q}(\mathbf{s}) &= \mathbf{W}_3 \mathbf{h}_2 + \mathbf{b}_3, \quad \mathbf{W}_3 \in \mathbb{R}^{4 \times 64}.
 \end{align}
 
-Pour garantir l'intégrité physique de la circulation et interdire tout comportement erratique, un masque d'admissibilité des actions $\mathcal{M}(s_t) \subset \mathcal{A}$ est appliqué avant l'étape $\varepsilon$-greedy~:
+Pour garantir la sécurité de la circulation, un masque d'admissibilité $\mathcal{M}(s_t)$ neutralise les actions non conformes avant la sélection~:
 \begin{equation}
 \mathcal{M}(s_t) = \begin{cases}
 \{a_{t-1}\} & \text{si } t_{\text{green}} < g_{\min}, \\
@@ -210,31 +205,31 @@ Pour garantir l'intégrité physique de la circulation et interdire tout comport
 \mathcal{A} & \text{sinon.}
 \end{cases}
 \end{equation}
-L'algorithme d'apprentissage et de contrôle est synthétisé dans l'Algorithme~\ref{alg:double_dqn}.
+La procédure de décision et d'apprentissage est résumée dans l'Algorithme~\ref{alg:double_dqn}.
 
 \begin{algorithm}[t]
 \caption{Contrôle Adaptatif par Double DQN sous Contraintes}
 \label{alg:double_dqn}
 \begin{algorithmic}[1]
-\REQUIRE Réseau en ligne $Q_{\boldsymbol{\theta}}$, réseau cible $Q_{\boldsymbol{\theta}^-}$, Replay Buffer $\mathcal{D}$.
-\REQUIRE Hyperparamètres~: taux d'apprentissage $\alpha = 10^{-3}$, facteur d'actualisation $\gamma = 0{,}95$, pas de décision $\Delta t = 5\,\mathrm{s}$.
+\REQUIRE Réseau principal $Q_{\boldsymbol{\theta}}$, réseau cible $Q_{\boldsymbol{\theta}^-}$, Replay Buffer $\mathcal{D}$.
+\REQUIRE Paramètres~: taux d'apprentissage $\alpha = 5 \times 10^{-4}$, actualisation $\gamma = 0{,}99$, pas $\Delta t = 5\,\mathrm{s}$, $\tau = 0{,}005$.
 \STATE Initialiser $\boldsymbol{\theta}^- \leftarrow \boldsymbol{\theta}$, $\mathcal{D} \leftarrow \emptyset$.
 \FOR{chaque épisode $= 1$ \TO $E$}
-    \STATE Réinitialiser l'environnement SUMO, observer $\mathbf{s}_0 \in \mathbb{R}^{13}$.
+    \STATE Réinitialiser SUMO avec la graine courante, observer $\mathbf{s}_0$.
     \FOR{$t = 0, \Delta t, 2\Delta t, \dots, T$}
-        \STATE Déterminer le masque d'actions valides $\mathcal{M}(\mathbf{s}_t)$.
-        \STATE Avec probabilité $\varepsilon$, sélectionner $a_t \in \mathcal{M}(\mathbf{s}_t)$ aléatoirement ;
-        \STATE Sinon, sélectionner $a_t = \arg\max_{a \in \mathcal{M}(\mathbf{s}_t)} Q(\mathbf{s}_t, a; \boldsymbol{\theta})$.
+        \STATE Calculer le masque d'actions autorisées $\mathcal{M}(\mathbf{s}_t)$.
+        \STATE Avec probabilité $\varepsilon$, choisir $a_t \in \mathcal{M}(\mathbf{s}_t)$ uniformément ;
+        \STATE Sinon, choisir $a_t = \arg\max_{a \in \mathcal{M}(\mathbf{s}_t)} Q(\mathbf{s}_t, a; \boldsymbol{\theta})$.
         \IF{$a_t \neq a_{t-1}$}
-            \STATE Exécuter phase jaune $y = 3\,\mathrm{s}$ via TraCI.
+            \STATE Appliquer le jaune intermédiaire de $y = 3\,\mathrm{s}$ via TraCI.
         \ENDIF
-        \STATE Maintenir la phase $a_t$ pendant $\Delta t$, simuler le trafic.
-        \STATE Observer le nouvel état $\mathbf{s}_{t+1}$ et calculer $r_t$ via~(\ref{eq:reward}).
-        \STATE Stocker la transition $(\mathbf{s}_t, a_t, r_t, \mathbf{s}_{t+1})$ dans $\mathcal{D}$.
-        \STATE Échantillonner un mini-lot $B \sim \mathcal{D}$ de taille 64.
-        \STATE Calculer les cibles $Y^{\text{DoubleQ}}$ via~(\ref{eq:target_double_dqn}).
-        \STATE Mettre à jour $\boldsymbol{\theta}$ par descente de gradient sur $\mathcal{L}(\boldsymbol{\theta})$~(\ref{eq:loss}).
-        \STATE Périodiquement, synchroniser $\boldsymbol{\theta}^- \leftarrow \boldsymbol{\theta}$.
+        \STATE Maintenir la phase $a_t$ durant $\Delta t$, avancer la simulation.
+        \STATE Observer l'état $\mathbf{s}_{t+1}$ et calculer $r_t$ selon~(\ref{eq:reward}).
+        \STATE Enregistrer la transition $(\mathbf{s}_t, a_t, r_t, \mathbf{s}_{t+1})$ dans $\mathcal{D}$.
+        \STATE Échantillonner un mini-lot de taille 64 dans $\mathcal{D}$.
+        \STATE Calculer les cibles $Y^{\text{DoubleQ}}$ selon~(\ref{eq:target_double_dqn}).
+        \STATE Mettre à jour $\boldsymbol{\theta}$ par gradient sur la perte~(\ref{eq:loss}).
+        \STATE Mettre à jour le réseau cible~: $\boldsymbol{\theta}^- \leftarrow \tau \boldsymbol{\theta} + (1 - \tau) \boldsymbol{\theta}^-$.
     \ENDFOR
 \ENDFOR
 \end{algorithmic}
@@ -245,9 +240,9 @@ L'algorithme d'apprentissage et de contrôle est synthétisé dans l'Algorithme~
 \begin{tikzpicture}
 \begin{axis}[
     width=\columnwidth,
-    height=4.6cm,
-    xlabel={Épisode d'apprentissage},
-    ylabel={Longueur de file moyenne (véh.)},
+    height=4.5cm,
+    xlabel={Épisode d'entraînement},
+    ylabel={File moyenne (véhicules)},
     xmin=1, xmax=150,
     ymin=1.5, ymax=11.0,
     grid=major,
@@ -262,76 +257,77 @@ L'algorithme d'apprentissage et de contrôle est synthétisé dans l'Algorithme~
 \legend{Moyenne mobile (10 ép.)}
 \end{axis}
 \end{tikzpicture}
-\caption{Convergence de la politique Double DQN sur 150 épisodes d'entraînement sous SUMO (réduction de la file moyenne de 9,88 à 2,50 véhicules).}
+\caption{Évolution de la file d'attente moyenne au cours des 150 épisodes d'entraînement (réduction de 9,88 à 2,50 véhicules).}
 \label{fig:training_curve}
 \end{figure}
 
 \section{Protocole Expérimental sous Eclipse SUMO}
 \label{sec:setup}
 
-\subsection{Environnement de Simulation et Réseau Routier}
-L'ensemble des expérimentations est exécuté sous la plateforme microscopique open-source \textbf{Eclipse SUMO} (version 1.26.0) interfacée en temps réel via l'API socket Python \textbf{TraCI} (\emph{Traffic Control Interface}). 
+\subsection{Environnement de Simulation}
+Les expérimentations sont conduites sous le simulateur microscopique Eclipse SUMO (version 1.26.0) piloté via la bibliothèque Python TraCI. La topologie correspond à une intersection réelle de la ville de Thiès (Sénégal) extraite d'OpenStreetMap.
 
-La topologie modélisée reproduit fidèlement le carrefour principal de la ville de \textbf{Thiès (Sénégal)}, extrait depuis la base cartographique OpenStreetMap et compilé avec l'utilitaire \texttt{netconvert}. L'intersection comprend quatre branches d'accès composées chacune de 2 voies de circulation (largeur $3{,}25\,\mathrm{m}$, vitesse limite $50\,\mathrm{km/h}$), soit 8 voies d'entrée et 8 voies de sortie convergentes sur le nœud central $J_0$.
+Le pas de calcul de SUMO est fixé à $\Delta t_{\text{sim}} = 1{,}0\,\mathrm{s}$ (\texttt{--step-length 1.0}). Pour éviter toute interférence avec les temporisations internes de SUMO, le pilotage des feux est assuré directement via l'API \texttt{setRedYellowGreenState()}. Le pas de décision de l'agent intervient toutes les $\Delta t = 5{,}0\,\mathrm{s}$.
 
-Le pas de calcul physique de la simulation est paramétré à $\Delta t_{\text{sim}} = 0{,}1\,\mathrm{s}$ avec le modèle de poursuite de Krauß. Pour éliminer tout artefact induit par les automates internes de SUMO, le contrôle des feux est opéré en mode exclusif via la commande native TraCI \texttt{setRedYellowGreenState()}. L'agent intervient à un intervalle de décision régulier fixé à $\Delta t_{\text{decision}} = 5{,}0\,\mathrm{s}$.
-
-\subsection{Demande de Trafic et Graines d'Évaluation}
-Afin d'évaluer la robustesse statistique des politiques, nous avons défini un protocole multi-graines rigoureux~:
+\subsection{Graines et Scénarios d'Évaluation}
+Le protocole multi-graines s'établit comme suit~:
 \begin{itemize}
-    \item Les épisodes d'évaluation durent $T_{\text{eval}} = 3600\,\mathrm{s}$ (soit 1 heure d'observation continue du trafic urbain).
-    \item L'évaluation est conduite sur cinq graines stochastiques indépendantes~:
+    \item Durée d'un épisode d'évaluation~: $T_{\text{eval}} = 3600\,\mathrm{s}$ (1 heure de simulation continue).
+    \item L'évaluation est menée sur 5 graines stochastiques indépendantes~:
     \begin{equation}
     \mathcal{S}_{\text{eval}} = \{7, 13, 21, 42, 77\}.
     \end{equation}
-    Ces graines régissent les tirages pseudo-aléatoires des instants d'injection et des itinéraires des véhicules dans le fichier de configuration \texttt{rl.sumocfg}. Elles sont strictement disjointes des graines utilisées lors de la phase d'apprentissage du modèle DDQN.
-    \item À l'évaluation, la politique DDQN est exploitée de façon purement déterministe ($\varepsilon = 0$), sans exploration.
+    Ces graines régissent les temps d'apparition et les itinéraires des flux dans le fichier \texttt{rl.sumocfg}, et sont disjointes des graines utilisées durant l'entraînement.
+    \item En évaluation, l'agent opère en mode purement déterministe ($\varepsilon = 0$).
 \end{itemize}
 
-\subsection{Contrôleurs de Référence (Baselines)}
-Quatre contrôleurs de référence sont déployés dans des conditions expérimentales rigoureusement identiques~:
+\subsection{Contrôleurs de Référence}
+Nous comparons l'agent Double DQN à trois approches de référence~:
 \begin{enumerate}
-    \item \textbf{Plan Fixe (Webster) : } Programme cyclique à 4 phases pré-dimensionné selon les flux moyens observés~: Phase~0 ($27\,\mathrm{s}$), Jaune ($3\,\mathrm{s}$), Phase~1 ($6\,\mathrm{s}$), Jaune ($3\,\mathrm{s}$), Phase~2 ($27\,\mathrm{s}$), Jaune ($3\,\mathrm{s}$), Phase~3 ($6\,\mathrm{s}$), Jaune ($3\,\mathrm{s}$), soit une durée totale de cycle de $C = 78\,\mathrm{s}$.
-    \item \textbf{Contrôleur Actionné (\emph{Actuated}) : } Algorithme basé sur la détection locale de lacune (\emph{gap-out}). Le vert en cours est prolongé tant que l'intervalle temporel entre véhicules successifs reste inférieur à $\Delta t_{\text{gap}} = 3{,}0\,\mathrm{s}$, sous réserve des bornes $g_{\min} = 10\,\mathrm{s}$ et $g_{\max} = 60\,\mathrm{s}$.
-    \item \textbf{Max-Pressure Naïf (\emph{MP-Sum}) : } Règle heuristique de Varaiya sélectionnant la phase maximisant la somme non pondérée des files entrantes selon~(\ref{eq:mp_sum}).
-    \item \textbf{Max-Pressure Normalisé (\emph{MP-Max}) : } Règle sélectionnant la phase dont la file d'approche maximale est la plus élevée selon~(\ref{eq:mp_max}).
+    \item \textbf{Plan Fixe (programme SUMO d'origine) : } Cycle prédéfini de durée $C = 78\,\mathrm{s}$ articulé en Phase~0 ($27\,\mathrm{s}$), Jaune ($3\,\mathrm{s}$), Phase~1 ($6\,\mathrm{s}$), Jaune ($3\,\mathrm{s}$), Phase~2 ($27\,\mathrm{s}$), Jaune ($3\,\mathrm{s}$), Phase~3 ($6\,\mathrm{s}$), Jaune ($3\,\mathrm{s}$).
+    \item \textbf{Contrôleur Actionné (\emph{Actuated}) : } Feu actionné par détection de trou de trafic (\emph{gap-out}) avec $\Delta t_{\text{gap}} = 3{,}0\,\mathrm{s}$, $g_{\min} = 10\,\mathrm{s}$ et $g_{\max} = 60\,\mathrm{s}$.
+    \item \textbf{Max-Pressure Somme (\emph{MP-Sum}) : } Règle heuristique de Varaiya agrégeant les files par la somme arithmétique~(\ref{eq:mp_sum}).
+    \item \textbf{Max-Pressure Maximum (\emph{MP-Max}) : } Variante sélectionnant la phase à partir de la file maximale parmi les approches autorisées~(\ref{eq:mp_max}).
 \end{enumerate}
 
-\subsection{Métriques d'Évaluation de Performance}
-Pour chaque véhicule $v \in \mathcal{V}_{\text{finished}}$ ayant complété son trajet durant l'heure de simulation, les métriques microscopiques enregistrées dans le fichier \texttt{tripinfo.xml} sont agrégées~:
+\subsection{Métriques de Performance}
+Les grandeurs suivantes sont extraites des fichiers \texttt{tripinfo.xml} pour chaque simulation de $3600\,\mathrm{s}$~:
 \begin{itemize}
-    \item \textbf{Temps perdu moyen (\emph{timeLoss})}~: Écart entre le temps de trajet réel et le temps en vitesse libre théorique sans congestion ($s$).
-    \item \textbf{Temps d'attente moyen (\emph{waitingTime})}~: Temps cumulé passé à l'arrêt complet ($v < 0{,}1\,\mathrm{m/s}$) ($s$).
-    \item \textbf{Durée moyenne de trajet (\emph{duration})}~: Temps total de parcours dans le réseau ($s$).
-    \item \textbf{Vitesse moyenne d'écoulement ($v$)}~: Rapport distance parcourue sur durée moyenne ($\mathrm{m/s}$).
-    \item \textbf{Débit d'évacuation ($n$)}~: Nombre total de véhicules parvenus à destination durant les $3600\,\mathrm{s}$.
-    \item \textbf{Véhicules bloqués en amont ($N_{\text{block}}$)}~: Véhicules générés par SUMO mais incapables de s'insérer sur le réseau par manque d'espace libre (\emph{teleport/insertion spillback}).
+    \item \textbf{timeLoss (s)}~: Temps de retard total par rapport à un écoulement à vitesse libre.
+    \item \textbf{waitingTime (s)}~: Durée totale passée à l'arrêt complet ($v < 0{,}1\,\mathrm{m/s}$).
+    \item \textbf{Durée de trajet (s)}~: Temps moyen nécessaire pour traverser la zone d'étude.
+    \item \textbf{Vitesse moyenne (m/s)}~: Vitesse spatiale moyenne des trajets achevés.
+    \item \textbf{Débit achevé ($n$)}~: Nombre de véhicules ayant atteint leur destination au terme de l'heure simulée.
+    \item \textbf{Véhicules non insérés ($N_{\text{block}}$)}~: Véhicules générés par la demande mais bloqués en amont du réseau en raison de la saturation physique des voies d'accès (\emph{insertion spillback}).
 \end{itemize}
 
 \begin{table*}[t]
 \centering
-\caption{Performances comparatives consolidées des contrôleurs sur 5 graines stochastiques indépendantes ($3600\,\mathrm{s}$ d'horizon)}
+\caption{Performances comparatives consolidées des contrôleurs ($3600\,\mathrm{s}$ d'horizon)}
 \label{tab:benchmark_results}
 \vspace{0.15cm}
 \begin{tabular}{lcccccc}
 \toprule
-\textbf{Contrôleur} & \textbf{timeLoss (s)} $\downarrow$ & \textbf{waitingTime (s)} $\downarrow$ & \textbf{Durée de trajet (s)} $\downarrow$ & \textbf{Vitesse (m/s)} $\uparrow$ & \textbf{Débit achevé ($n$)} $\uparrow$ & \textbf{Variation / Fixe} \\
+\textbf{Contrôleur} & \textbf{timeLoss (s)} $\downarrow$ & \textbf{waitingTime (s)} $\downarrow$ & \textbf{Durée (s)} $\downarrow$ & \textbf{Vitesse (m/s)} $\uparrow$ & \textbf{Débit achevé ($n$)} $\uparrow$ & \textbf{Écart / Fixe} \\
 \midrule
-\textbf{Plan Fixe (Webster)} & $31{,}5 \pm 0{,}5$ & $23{,}8 \pm 0{,}4$ & $48{,}5 \pm 0{,}6$ & $6{,}37 \pm 0{,}07$ & $872 \pm 23$ & Référence ($0\,\%$) \\
-\textbf{Actionné (\emph{Actuated})} & $34{,}2 \pm 1{,}1$ & $25{,}8 \pm 0{,}8$ & $51{,}2 \pm 1{,}2$ & $5{,}72 \pm 0{,}11$ & $874 \pm 22$ & $+8{,}7\,\%$ \\
-\textbf{Max-Pressure (\emph{MP-Sum})} & $71{,}7 \pm 15{,}2$ & $57{,}3 \pm 12{,}6$ & $86{,}6 \pm 14{,}8$ & $4{,}12 \pm 0{,}45$ & $580 \pm 28$ & $+127{,}7\,\%$ \\
-\textbf{Max-Pressure (\emph{MP-Max})} & $45{,}7 \pm 3{,}2$ & $37{,}7 \pm 2{,}9$ & $63{,}2 \pm 3{,}5$ & $6{,}65 \pm 0{,}18$ & $798 \pm 18$ & $+45{,}1\,\%$ \\
+\textbf{Plan Fixe (programme SUMO 78 s)} & $31{,}5 \pm 0{,}5$ & $23{,}8 \pm 0{,}4$ & $48{,}5 \pm 0{,}6$ & $6{,}37 \pm 0{,}07$ & $\approx 872$ & Référence ($0\,\%$) \\
+\textbf{Actionné (\emph{Actuated gap-out})} & $34{,}2 \pm 1{,}1$ & $25{,}8 \pm 0{,}8$ & $51{,}2 \pm 1{,}2$ & $5{,}72 \pm 0{,}11$ & $\approx 874$ & $+8{,}7\,\%$ \\
+\textbf{Max-Pressure (\emph{MP-Sum}, 5 graines)$^\dagger$} & $71{,}7 \pm 15{,}2$ & $57{,}3 \pm 12{,}6$ & $86{,}6 \pm 14{,}8$ & $4{,}12 \pm 0{,}45$ & $\approx 580$ & $+127{,}7\,\%$ \\
+\textbf{Max-Pressure (\emph{MP-Max}, graine 7)$^\ddagger$} & $45{,}7$ & $37{,}7$ & $63{,}2$ & $6{,}65$ & $\approx 798$ & $+45{,}1\,\%$ \\
 \midrule
-\textbf{Double DQN (Notre approche)} & $\mathbf{15{,}5 \pm 0{,}6}$ & $\mathbf{9{,}0 \pm 0{,}5}$ & $\mathbf{32{,}7 \pm 0{,}7}$ & $\mathbf{8{,}16 \pm 0{,}09}$ & $\mathbf{889 \pm 21}$ & $\mathbf{-50{,}7\,\%}$ \\
+\textbf{Double DQN} & $\mathbf{15{,}5 \pm 0{,}6}$ & $\mathbf{9{,}0 \pm 0{,}5}$ & $\mathbf{32{,}7 \pm 0{,}7}$ & $\mathbf{8{,}16 \pm 0{,}09}$ & $\mathbf{\approx 889}$ & $\mathbf{-50{,}7\,\%}$ \\
 \bottomrule
+\multicolumn{7}{l}{\footnotesize Moyennes $\pm$ écart-type sur 5 graines stochastiques ($\mathcal{S}_{\text{eval}} = \{7, 13, 21, 42, 77\}$), sauf indication contraire.} \\
+\multicolumn{7}{l}{\footnotesize $^\dagger$ Configuration pathologique avec famine de phase et refoulement amont sur ce carrefour.} \\
+\multicolumn{7}{l}{\footnotesize $^\ddagger$ Évaluation réalisée sur la graine 7 uniquement (aucun écart-type inter-graines n'est donc rapporté).}
 \end{tabular}
 \end{table*}
 
 \section{Résultats Expérimentaux et Analyses}
 \label{sec:results}
 
-\subsection{Analyse Macro-Performances Globale}
-Le Tableau~\ref{tab:benchmark_results} présente la synthèse numérique des métriques de trafic sur les 5 graines stochastiques d'évaluation. La Figure~\ref{fig:bar_comparison} illustre graphiquement les disparités observées en termes de temps perdu et de temps d'attente.
+\subsection{Performances Globales sur 5 Graines}
+Le Tableau~\ref{tab:benchmark_results} synthétise les métriques mesurées. La Figure~\ref{fig:bar_comparison} illustre les écarts de temps perdu et de temps d'attente.
 
 \begin{figure}[b]
 \centering
@@ -340,7 +336,7 @@ Le Tableau~\ref{tab:benchmark_results} présente la synthèse numérique des mé
     ybar,
     bar width=11pt,
     width=\columnwidth,
-    height=5.8cm,
+    height=5.6cm,
     ylabel={Temps moyen par véhicule (s)},
     symbolic x coords={Fixe, Actionné, MP-Sum, MP-Max, DDQN},
     xtick=data,
@@ -363,28 +359,27 @@ Le Tableau~\ref{tab:benchmark_results} présente la synthèse numérique des mé
 \legend{\textit{timeLoss}, \textit{waitingTime}}
 \end{axis}
 \end{tikzpicture}
-\caption{Comparaison du temps perdu (\emph{timeLoss}) et du temps d'attente à l'arrêt (\emph{waitingTime}) selon les différents contrôleurs testés (moyennes sur 5 graines).}
+\caption{Comparaison du temps perdu (\emph{timeLoss}) et du temps d'attente à l'arrêt (\emph{waitingTime}). Valeurs moyennes sur 5 graines stochastiques pour Fixe, Actionné, MP-Sum et DDQN ; résultat sur la graine 7 uniquement pour MP-Max.}
 \label{fig:bar_comparison}
 \end{figure}
 
-Les enseignements majeurs suivants se dégagent des observations~:
+Les observations principales sont les suivantes~:
 \begin{itemize}
-    \item \textbf{Efficacité remarquable du Double DQN~:} L'agent appris surpasse massivement tous les régulateurs conventionnels. Il divise le temps perdu par deux par rapport au plan fixe ($-50{,}7\,\%$, soit $15{,}5\,\mathrm{s}$ vs $31{,}5\,\mathrm{s}$) et abaisse le temps d'attente à seulement $9{,}0\,\mathrm{s}$ (gain de $-62{,}2\,\%$). La vitesse moyenne d'écoulement atteint $8{,}16\,\mathrm{m/s}$, soit un gain de fluidité de $+28{,}1\,\%$.
-    \item \textbf{Stabilité et répétabilité~:} L'écart-type inter-graines sous DDQN reste extrêmement contenu ($\pm 0{,}6\,\mathrm{s}$ sur le \emph{timeLoss}), prouvant que la politique a acquis une dynamique robuste indépendante des fluctuations d'injection.
-    \item \textbf{Faiblesse relative du mode Actionné~:} Le régulateur actionné enregistre une légère détérioration ($+8{,}7\,\%$ de temps perdu). Ce phénomène est classique aux carrefours denses à plusieurs voies~: en prolongeant le vert au profit de quelques véhicules isolés sur l'axe prioritaire jusqu'au plafond $g_{\max}$, il pénalise lourdement les axes transverses en attente.
-    \item \textbf{Dégradation catastrophique de Max-Pressure Naïf~:} L'algorithme MP-Sum subit une explosion de son temps perdu ($71{,}7 \pm 15{,}2\,\mathrm{s}$, soit $+127{,}7\,\%$) et une chute dramatique de son débit d'évacuation ($580$ véhicules achevés contre $889$ pour le DDQN, soit $-34{,}8\,\%$ de trafic non évacué).
+    \item \textbf{Gains du Double DQN~:} L'agent appris obtient un temps perdu moyen de $15{,}5 \pm 0{,}6\,\mathrm{s}$, soit une réduction de $50{,}7\,\%$ par rapport au plan fixe de référence ($31{,}5 \pm 0{,}5\,\mathrm{s}$). Le temps d'attente est ramené à $9{,}0 \pm 0{,}5\,\mathrm{s}$ (contre $23{,}8\,\mathrm{s}$), pour un débit achevé d'environ 889 véhicules sur l'heure de simulation.
+    \item \textbf{Comportement du régulateur actionné~:} Le mode actionné présente un retard moyen légèrement accru ($+8{,}7\,\%$, soit $34{,}2\,\mathrm{s}$). L'allongement du vert sur un axe prioritaire en présence de passages successifs repousse la desserte des approches transversales, augmentant leur attente cumulée.
+    \item \textbf{Dégradation sous Max-Pressure Somme~:} L'algorithme MP-Sum enregistre un retard moyen élevé ($71{,}7 \pm 15{,}2\,\mathrm{s}$) et un débit achevé réduit d'environ $33\,\%$ ($\approx 580$ véhicules terminés).
 \end{itemize}
 
-\subsection{Diagnostic Microscopique : Disséquer l'Échec de Max-Pressure}
+\subsection{Diagnostic Microscopique : Analyse de la Famine sous Max-Pressure}
 \label{subsec:microscopic}
 
-L'effondrement des performances de Max-Pressure en environnement microscopique exigeait une investigation comportementale minutieuse. Une première hypothèse intuitive aurait été d'attribuer cet échec à un phénomène d'oscillations frénétiques (\emph{thrashing}), où l'algorithme basculerait continuellement d'une phase à l'autre dès qu'un véhicule se présente, gaspillant le temps utile en phases jaunes de dégagement ($3\,\mathrm{s}$).
+L'écart de performance de MP-Sum sur ce carrefour nécessite une analyse microscopique. Une première hypothèse pouvait être celle d'une alternance trop fréquente entre phases (\emph{thrashing}), multipliant les temps jaunes d'inter-vert ($3\,\mathrm{s}$).
 
-Pour tester rigoureusement cette hypothèse, nous avons instrumenté la simulation sous la graine 7 ($3600\,\mathrm{s}$) en consignant le nombre total de commutations de phases (\emph{phase switches}) et la répartition exacte du temps de vert cumulé alloué à chaque phase. Les résultats sont présentés dans le Tableau~\ref{tab:diagnostic_phases} et visualisés sur la Figure~\ref{fig:stacked_distribution}.
+Pour vérifier cette hypothèse, nous avons consigné le nombre de commutations et la répartition temporelle exacte des phases sur la graine 7 ($3600\,\mathrm{s}$). Les résultats sont présentés au Tableau~\ref{tab:diagnostic_phases} et sur la Figure~\ref{fig:stacked_distribution}.
 
 \begin{table}[t]
 \centering
-\caption{Diagnostic microscopique d'allocation des phases sur la graine 7 ($3600\,\mathrm{s}$)}
+\caption{Diagnostic microscopique d'allocation des phases (Graine 7, $3600\,\mathrm{s}$)}
 \label{tab:diagnostic_phases}
 \vspace{0.15cm}
 \resizebox{\columnwidth}{!}{%
@@ -425,46 +420,46 @@ Pour tester rigoureusement cette hypothèse, nous avons instrumenté la simulati
 \legend{Phase 0, Phase 1, Phase 2, Phase 3}
 \end{axis}
 \end{tikzpicture}
-\caption{Distribution temporelle relative des phases vertes (Graine 7).}
+\caption{Distribution temporelle relative des phases vertes (mesurée sur la graine 7 sur un horizon de $3600\,\mathrm{s}$).}
 \label{fig:stacked_distribution}
 \end{figure}
 
-Les données de terrain révèlent un mécanisme fondamentalement différent du thrashing~:
+Les mesures écartent l'hypothèse de l'oscillation excessive et établissent un mécanisme de blocage par famine~:
 \begin{enumerate}
-    \item \textbf{Réfutation formelle du thrashing~:} MP-Sum n'effectue que \textbf{91 commutations} sur 1 heure, soit nettement moins que le plan fixe (159) et le DDQN (210). L'algorithme ne souffre donc d'aucune hyper-instabilité de commutation.
-    \item \textbf{Phénomène de Famine de Phase (\emph{Phase Starvation})~:} La Phase~2 monopolise à elle seule \textbf{$80{,}8\,\%$ du temps vert total} ($2910\,\mathrm{s}$ sur $3600\,\mathrm{s}$). À l'opposé, la Phase~3 (tourne-à-gauche secondaire) subit une privation absolue de signal vert~: \textbf{$0{,}0\,\mathrm{s}$ de vert en 1 heure} !
-    \item \textbf{Spillback et perte de capacité du réseau~:} Du fait de la géométrie asymétrique, les véhicules engagés dans les mouvements de la Phase~3 restent définitivement bloqués sur leur voie. La file s'allonge jusqu'à saturer la totalité de l'approche amont. Cette congestion physique empêche l'insertion de nouveaux véhicules générés par le simulateur, conduisant à un refoulement massif de \textbf{207 véhicules bloqués hors réseau} (Figure~\ref{fig:topology_graph}). C'est ce refoulement qui explique la chute de débit ($580$ vs $889$) et l'explosion mathématique du \emph{timeLoss} de MP-Sum.
+    \item \textbf{Absence de thrashing~:} MP-Sum effectue \textbf{91 commutations}, ce qui est nettement inférieur au plan fixe (159) et au Double DQN (210). La perte d'efficacité n'est donc pas due à une déperdition de temps dans les transitions jaunes.
+    \item \textbf{Monopolisation et famine de phase~:} La Phase~2 capte à elle seule \textbf{$80{,}8\,\%$} du temps vert ($2910\,\mathrm{s}$ sur $3600\,\mathrm{s}$), tandis que la Phase~3 (tourne-à-gauche secondaire) ne reçoit \textbf{aucun temps de vert} ($0{,}0\,\mathrm{s}$) sur l'ensemble de l'heure.
+    \item \textbf{Refoulement amont (\emph{spillback})~:} En l'absence de vert sur la Phase~3, les véhicules engagés dans ce mouvement s'accumulent jusqu'à saturer physiquement l'approche d'entrée. Cette file continue empêche l'insertion de nouveaux véhicules générés par SUMO en périphérie du réseau, conduisant au blocage de \textbf{207 véhicules hors réseau}. Ce refoulement explique la baisse observée du nombre de véhicules terminés ($580$ au lieu de $\approx 889$).
 \end{enumerate}
 
-\subsection{Pourquoi l'Agent Double DQN Élimine la Famine}
-Pourquoi la politique apprise par l'agent Double DQN évite-t-elle le piège de la famine dans lequel sombre Max-Pressure ?
+Il convient de souligner que ce résultat s'observe sur cette géométrie spécifique et pour cette distribution de demande ; il ne constitue pas une invalidation de la théorie de Max-Pressure en réseau étendu, mais met en évidence la sensibilité de la règle de somme arithmétique sur carrefour isolé asymétrique.
 
-La réponse réside dans la nature même des fonctions d'objectif~:
-\begin{itemize}
-    \item \textbf{Max-Pressure est une règle myope à un pas~:} Elle calcule $\arg\max_p \sum x_l(t)$ à l'instant présent. Dès lors que l'axe Est-Ouest présente structurellement un débit direct supérieur, la somme des files de la Phase~2 dépasse continuellement la file isolée de la Phase~3, condamnant cette dernière à ne jamais franchir le seuil d'activation.
-    \item \textbf{Le Double DQN optimise l'horizon futur cumulé~:} Par le truchement du facteur d'actualisation $\gamma = 0{,}95$ et de l'équation de Bellman~(\ref{eq:target_double_dqn}), l'agent anticipe que laisser s'accumuler des véhicules immobiles sur la Phase~3 génère une croissance quadratique du temps d'attente cumulé global $W(t)$, dégradant les récompenses futures $r_{t+k}$ selon~(\ref{eq:reward}).
-\end{itemize}
+\subsection{Mécanisme de Régulation de l'Agent Double DQN}
+L'agent Double DQN évite ce refoulement en raison de la structure de son critère d'optimisation.
 
-Par conséquent, l'agent DDQN apprend de manière endogène une stratégie d'arbitrage optimale~: il alloue $41{,}5\,\%$ du temps à la Phase~0, $40{,}1\,\%$ à la Phase~2, et déclenche de façon intercalaire des décharges courtes mais régulières sur la Phase~3 ($18{,}3\,\%$ du temps total, Figure~\ref{fig:stacked_distribution}). Cette politique de purge préventive maintient la fluidité de tous les axes et garantit un taux de blocage amont strictement nul ($N_{\text{block}} = 0$).
+Alors que Max-Pressure agit comme un sélecteur glouton à l'instant présent ($\arg\max_p P(p, t)$), la fonction de valeur du Double DQN intègre les récompenses futures actualisées par l'équation de Bellman~(\ref{eq:target_double_dqn}) avec $\gamma = 0{,}99$. L'accumulation continue de véhicules à l'arrêt sur une approche non desservie entraîne une dégradation progressive du retour actualisé via la baisse de $r_t = \Delta W / 100{,}0$.
 
-\section{Faisabilité de Déploiement et Conséquences Pratiques}
+En conséquence, la politique apprise par l'agent équilibre la desserte des deux axes directs ($41{,}5\,\%$ pour la Phase~0 et $40{,}1\,\%$ pour la Phase~2) tout en insérant régulièrement des purges courtes sur la Phase~3 ($18{,}3\,\%$ du temps vert, Figure~\ref{fig:stacked_distribution}). Cette stratégie maintient les files sous le seuil d'engorgement physique et assure un nombre nul de véhicules bloqués en amont ($N_{\text{block}} = 0$).
+
+\section{Discussion et Perspectives de Déploiement}
 \label{sec:deployment}
 
-Sur le plan de l'implémentation physique dans des environnements urbains contraints tels que Thiès, les résultats obtenus ouvrent des perspectives opérationnelles immédiates~:
+Sur le plan pratique, l'application d'un contrôle adaptatif local dans des environnements urbains tels que Thiès soulève des questions de faisabilité technique~:
 
 \begin{itemize}
-    \item \textbf{Frugalité d'instrumentation~:} L'état d'entrée de notre modèle ($\mathbf{s}_t \in \mathbb{R}^{13}$) ne requiert qu'une estimation macroscopique des longueurs de files et densités d'approches. De telles informations peuvent être extraites en temps réel par une caméra de vidéosurveillance grand angle couplée à un modèle de détection d'objets allégé (ex. YOLOv8n / Edge TPU) monté au sommet du mât de signalisation, pour un coût matériel inférieur à $500\,\$$, contrastant avec les dizaines de milliers d'euros nécessaires aux boucles SCATS/SCOOT.
-    \item \textbf{Sobriété calculatoire~:} Avec seulement deux couches cachées de 64 neurones, l'inférence d'une décision par le réseau DDQN s'effectue en moins de $0{,}2\,\mathrm{ms}$ sur un micro-ordinateur monocarte (Raspberry Pi 4 ou NVIDIA Jetson Nano), satisfaisant amplement la contrainte de période de décision fixée à $5\,\mathrm{s}$.
+    \item \textbf{Instrumentation~:} L'état d'entrée ($\mathbf{s}_t \in \mathbb{R}^{13}$) repose sur des agrégats par approche (files et densités). Une perspective réaliste d'instrumentation consisterait à employer une caméra grand angle en tête de mât associée à un modèle d'inférence visuelle légère, évitant ainsi le coût d'installation et d'entretien des boucles magnétiques conventionnelles.
+    \item \textbf{Charge de calcul~:} Le modèle décisionnel (MLP $13 \rightarrow 64 \rightarrow 64 \rightarrow 4$) présente une empreinte calculatoire réduite. Son inférence peut s'envisager sur un processeur monocarte standard en bordure de route, le délai de calcul requis étant très largement inférieur à l'intervalle de décision de $5\,\mathrm{s}$.
 \end{itemize}
 
-\section{Conclusion et Travaux Futurs}
+Néanmoins, le passage de la simulation au terrain réel nécessite d'étudier la robustesse de la politique face aux occlusions visuelles partielles, aux variations de luminosité et aux incertitudes de détection.
+
+\section{Conclusion}
 \label{sec:conclusion}
 
-Cet article a présenté un benchmark expérimental exhaustif confrontant un contrôleur adaptatif basé sur l'apprentissage par renforcement profond (\emph{Double DQN}) aux standards théoriques et industriels du transport (Plan Fixe de Webster, Régulation Actionnée, et Max-Pressure) sous le simulateur microscopique Eclipse SUMO, appliqué à l'intersection réelle de Thiès (Sénégal).
+Cet article a présenté une évaluation comparative d'un contrôleur de feux adaptatif par Double DQN sur le carrefour principal de Thiès (Sénégal) sous Eclipse SUMO, face à un plan fixe à cycle de $78\,\mathrm{s}$, un régulateur actionné et l'algorithme Max-Pressure.
 
-L'analyse consolidée sur cinq graines stochastiques démontre qu'un agent Double DQN compact réduit de moitié le temps perdu moyen ($-50{,}7\,\%$) et de $62{,}2\,\%$ le temps d'attente à l'arrêt, tout en préservant le débit d'évacuation maximal. En outre, notre diagnostic microscopique apporte un éclairage inédit sur les limites pratiques de Max-Pressure sur carrefour asymétrique isolé~: l'effondrement de la règle gloutonne résulte d'une famine monopolistique de phase induisant un refoulement physique amont (\emph{spillback}), pathologie que l'agent Double DQN surmonte grâce à son optimisation à long terme de l'attente cumulée.
+Sur cinq graines d'évaluation indépendantes de $3600\,\mathrm{s}$, l'agent Double DQN réduit le retard moyen de $50{,}7\,\%$ par rapport au plan fixe et maintient un débit achevé optimal. L'analyse microscopique de Max-Pressure Somme a permis d'isoler un phénomène de famine de phase menant au refoulement amont, que la politique apprise neutralise en intercalant des purges courtes sur l'approche secondaire.
 
-Les travaux futurs exploreront l'extension de ce formalisme à un réseau maillé multi-carrefours via des architectures d'attention sur graphes de type CoLight~\cite{wei2019colight} ou MAPPO, ainsi que l'évaluation de la résilience de l'agent en présence d'occlusions visuelles partielles ou de bruit de détection de caméras réelles.
+Les travaux futurs porteront sur l'extension à la coordination de plusieurs intersections adjacentes via des architectures multi-agents, ainsi que sur l'évaluation de la résilience du modèle en présence de bruit de mesure sensoriel.
 
 \begin{thebibliography}{99}
 
@@ -481,13 +476,13 @@ P.~R. Lowrie, ``SCATS, Sydney Co-ordinated Adaptive Traffic System: A traffic re
 P.~B. Hunt, D.~I. Robertson, R.~D. Bretherton, and R.~I. Winton, ``SCOOT: a traffic responsive method of coordinating traffic signals,'' \emph{TRRL Laboratory Report}, no.~1014, Transport and Road Research Laboratory, Crowthorne, 1981.
 
 \bibitem{wei2018intellilight}
-H.~Wei, G.~Zheng, H.~Yao, and Z.~Li, ``IntelliLight: A reinforcement learning approach for intelligent traffic light control,'' in \emph{Proc. 24th ACM SIGKDD Int. Conf. Knowl. Discovery Data Mining (KDD)}, 2018, pp. 2496--2505.
+H.~Wei, G.~Zheng, H.~Yao, and Z.~Li, ``IntelliLight: A reinforcement learning approach for intelligent traffic light control,'' in \emph{Proc. 24th ACM SIGKDD Int. Conf. Knowledge Discovery \& Data Mining (KDD)}, 2018, pp. 2496--2505.
 
 \bibitem{wei2019presslight}
-H.~Wei, C.~Chen, G.~Zheng, K.~Wu, V.~Gayah, K.~Xu, and Z.~Li, ``PressLight: Decentralized reinforcement learning via localized reward for traffic signal control,'' in \emph{Proc. 25th ACM SIGKDD Int. Conf. Knowl. Discovery Data Mining (KDD)}, 2019, pp. 1916--1925.
+H.~Wei, C.~Chen, G.~Zheng, K.~Wu, V.~Gayah, K.~Xu, and Z.~Li, ``PressLight: Decentralized reinforcement learning via localized reward for traffic signal control,'' in \emph{Proc. 25th ACM SIGKDD Int. Conf. Knowledge Discovery \& Data Mining (KDD)}, 2019, pp. 1916--1925.
 
 \bibitem{chen2020toward}
-C.~Chen, H.~Wei, N.~Xu, G.~Zheng, M.~Yang, Y.~Xiong, K.~Xu, and Z.~Li, ``Toward a thousand lights: Decentralized deep reinforcement learning for large-scale traffic signal control,'' in \emph{Proc. 34th AAAI Conf. Artif. Intell. (AAAI)}, vol.~34, no.~01, 2020, pp. 3414--3421.
+C.~Chen, H.~Wei, N.~Xu, G.~Zheng, M.~Yang, Y.~Xiong, K.~Xu, and Z.~Li, ``Toward a thousand lights: Decentralized deep reinforcement learning for large-scale traffic signal control,'' in \emph{Proc. 34th AAAI Conf. Artificial Intelligence (AAAI)}, vol.~34, no.~01, 2020, pp. 3414--3421.
 
 \bibitem{zhang2020pdlight}
 C.~Zhang, X.~He, and G.~Wang, ``PDLight: A deep reinforcement learning traffic light control algorithm with pressure and dynamic light duration,'' \emph{arXiv preprint arXiv:2009.13711}, 2020.
@@ -499,7 +494,7 @@ H.~Wei, G.~Zheng, V.~Gayah, and Z.~Li, ``Recent advances in reinforcement learni
 K.~Zhao, X.~Zhai, and D.~Guan, ``Deep reinforcement learning for traffic signal control: A comprehensive review of algorithms, environments, and benchmark metrics,'' \emph{IEEE Transactions on Intelligent Vehicles}, vol.~9, no.~3, pp. 4110--4128, 2024.
 
 \bibitem{day2016detector}
-C.~M. Day, H.~Li, L.~Richardson, J.~Howard, T.~Platte, J.~R. Sturdevant, and D.~M. Bullock, ``Detector-free optimization of traffic signal offsets with connected vehicle data,'' \emph{Transportation Research Record}, vol. 2620, no.~1, pp. 52--60, 2016.
+C.~M. Day, H.~Li, L.~Richardson, J.~Howard, T.~Platte, J.~R. Sturdevant, and D.~M. Bullock, ``Detector-free optimization of traffic signal offsets with connected vehicle data,'' \emph{Transportation Research Record}, vol. 2620, no.~1, pp. 52--60, 2017.
 
 \bibitem{varaiya2013max}
 P.~Varaiya, ``Max pressure control of a network of signalized intersections,'' \emph{Transportation Research Part C: Emerging Technologies}, vol.~36, pp. 177--195, 2013.
@@ -514,10 +509,7 @@ V.~Mnih \emph{et al.}, ``Human-level control through deep reinforcement learning
 W.~Genders and S.~Razavi, ``Using deep reinforcement learning for traffic light control,'' \emph{Transportation Research Record}, vol. 2620, no.~1, pp. 52--60, 2016.
 
 \bibitem{van2016deep}
-H.~van Hasselt, A.~Guez, and D.~Silver, ``Deep reinforcement learning with double Q-learning,'' in \emph{Proc. 30th AAAI Conf. Artif. Intell. (AAAI)}, 2016, pp. 2094--2100.
-
-\bibitem{wei2019colight}
-G.~Zheng, Y.~Xiong, X.~Zang, J.~Feng, H.~Wei, H.~Zhang, Y.~Li, K.~Xu, and Z.~Li, ``Learning phase coordination for large-scale traffic signal control,'' in \emph{Proc. 25th ACM SIGKDD Int. Conf. Knowl. Discovery Data Mining (KDD)}, 2019, pp. 1906--1915.
+H.~van Hasselt, A.~Guez, and D.~Silver, ``Deep reinforcement learning with double Q-learning,'' in \emph{Proc. 30th AAAI Conf. Artificial Intelligence (AAAI)}, 2016, pp. 2094--2100.
 
 \end{thebibliography}
 
