@@ -1,0 +1,137 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{lmodern}
+\usepackage{geometry}
+\geometry{top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm}
+
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{microtype}
+\usepackage{titlesec}
+\usepackage{xcolor}
+\usepackage[colorlinks=true,linkcolor=blue!70!black,citecolor=blue!70!black,urlcolor=blue!70!black]{hyperref}
+
+% Mise en page des titres
+\titleformat{\section}{\large\bfseries\color{blue!80!black}}{\thesection.}{0.6em}{}[\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries\color{black!90}}{\thesubsection.}{0.5em}{}
+
+\setlength{\parskip}{0.5em}
+\setlength{\parindent}{0pt}
+
+\title{\textbf{\LARGE Rapport de Présentation du Projet}\\[0.3cm]
+\Large Régulation Intelligente des Feux Tricolores par Intelligence Artificielle\\[0.15cm]
+\normalsize Résultats, Perspectives et Devis Matériel pour le Prototypage}
+
+\author{\textbf{Mamadou Ahmadou Ka}\\[0.1cm]
+\textit{Département Informatique, UFR Sciences et Technologies}\\
+\textit{Université Iba Der Thiam de Thiès (UIDT), Thiès, Sénégal}\\
+\texttt{mahmadou.ka@univ-thies.sn}}
+
+\date{\today}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+
+\begin{abstract}
+Ce document présente de façon simple et synthétique le projet de régulation adaptative des feux de circulation par apprentissage par renforcement profond (\emph{Double DQN}) appliqué au carrefour principal de Thiès. Il résume les résultats obtenus en simulation microscopique sous Eclipse SUMO, expose les motivations pour passer à une réalisation physique, détaille la démarche de concrétisation et fournit la liste du matériel nécessaire pour la fabrication d'une maquette fonctionnelle de laboratoire (Option 1), sans mention de tarifs.
+\end{abstract}
+
+\vspace{0.4cm}
+
+\section{Présentation du projet}
+
+\subsection{Le problème à résoudre}
+À Thiès, les feux tricolores fonctionnent aujourd'hui selon des programmes à temps fixe. Les durées de feu vert sont identiques à toute heure, sans tenir compte du nombre réel de véhicules qui attendent. Ce mode de fonctionnement rigide engendre des files d'attente inutiles, allonge les temps de trajet et augmente la consommation de carburant ainsi que la pollution.
+
+\subsection{La solution proposée}
+Nous avons développé un système de régulation adaptative basé sur l'intelligence artificielle, plus précisément l'algorithme \textbf{Double DQN} (\emph{Double Deep Q-Network}). L'agent observe en permanence l'état du carrefour (longueurs de file, densités de véhicules, phase active) et prend une décision toutes les 5 secondes. Il choisit d'accorder le feu vert à l'approche qui subit la plus forte attente, tout en respectant strictement un temps de vert minimal de sécurité (10 secondes) et un feu jaune intermédiaire (3 secondes).
+
+\subsection{Résultats obtenus en simulation sous SUMO}
+Les simulations comparatives menées sur cinq graines aléatoires indépendantes d'une durée de 1 heure chacune ($3600\,\mathrm{s}$) démontrent une nette supériorité du contrôleur intelligent face au feu à temps fixe d'origine :
+\begin{itemize}[nosep]
+    \item \textbf{Temps perdu moyen (timeLoss) :} réduit de \textbf{50{,}7\,\%}, passant de $31{,}5\,\mathrm{s}$ à $15{,}5\,\mathrm{s}$ par véhicule.
+    \item \textbf{Temps d'attente à l'arrêt complet :} réduit de plus de $60\,\%$, passant de $23{,}8\,\mathrm{s}$ à $9{,}0\,\mathrm{s}$.
+    \item \textbf{Capacité d'écoulement :} débit maximal entièrement maintenu (environ 889 véhicules évacués sur l'heure, aucun blocage amont).
+\end{itemize}
+
+\section{Pourquoi passer à un prototype réel ?}
+
+Bien que les simulations sous SUMO soient concluantes, la réalisation d'un prototype physique est indispensable pour franchir un cap vers une application concrète :
+\begin{enumerate}[nosep]
+    \item \textbf{Le trafic réel sénégalais est mixte :} Les véhicules ne restent pas toujours dans des voies bien tracées. Les motos « Jakarta », les taxis de proximité, les piétons et les calèches partagent la chaussée. L'intelligence artificielle doit être confrontée à cette réalité visuelle.
+    \item \textbf{Les conditions environnementales locales :} La chaleur, la poussière et les risques de coupures de courant exigent une validation sur du matériel embarqué robuste et autonome.
+    \item \textbf{Un démonstrateur tangible :} Disposer d'une maquette physique fonctionnelle est le moyen le plus convaincant pour présenter les résultats aux autorités municipales (Mairie de Thiès), aux gestionnaires routiers (AGEROUTE) et aux jurys universitaires.
+\end{enumerate}
+
+\section{Démarche et étapes de concrétisation}
+
+Le passage du modèle virtuel au monde réel s'articule en trois étapes progressives et sécurisées :
+
+\begin{enumerate}
+    \item \textbf{Étape 1 : Conception du banc d'essai en laboratoire (Hardware-in-the-Loop)} \\
+    Nous construisons une maquette de carrefour équipée de feux miniatures à LED et d'un micro-ordinateur d'intelligence artificielle. Le modèle Double DQN s'exécute sur le boîtier et pilote physiquement les feux sous le contrôle d'un module de sécurité matériel.
+    
+    \item \textbf{Étape 2 : Remplacement des capteurs virtuels par la vision caméra} \\
+    Nous filmons le carrefour de Thiès depuis un point en hauteur. Un modèle de vision par ordinateur léger (type YOLO) détecte les véhicules en direct et estime le niveau d'encombrement de chaque branche.
+    
+    \item \textbf{Étape 3 : Évaluation en « mode fantôme » (Shadow Mode) sans risque} \\
+    Le système observe le trafic réel sans être branché sur les feux de la ville. Il enregistre ce qu'il aurait décidé face au trafic réel et permet de mesurer les gains réels obtenus avant tout branchement électrique définitif.
+\end{enumerate}
+
+\section{Devis descriptif du matériel (Option 1 : Banc d'essai en laboratoire)}
+
+Pour réaliser cette première phase de concrétisation, nous retenons l'\textbf{Option 1}~: une maquette de laboratoire complète servant de banc de test matériel. Le tableau ci-dessous liste l'ensemble des équipements nécessaires, leurs spécifications techniques et leur rôle dans le système, sans indication de prix.
+
+\vspace{0.2cm}
+
+\begin{table}[ht]
+\centering
+\small
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{>{\bfseries}p{4.2cm} p{7.5cm} c}
+\toprule
+Équipement / Matériel & Description technique et Rôle dans le système & Quantité \\
+\midrule
+Calculateur Edge AI & 
+Raspberry Pi 5 (8 Go de RAM) équipé d'un module accélérateur d'intelligence artificielle (Hat Hailo-8, 13 à 26 TOPS). Exécute le réseau de neurones et le traitement d'images en temps réel. & 1 unité \\
+\midrule
+Caméra haute définition & 
+Caméra grand angle USB / CSI haute sensibilité pour la capture du flux vidéo et la détection visuelle des véhicules. & 1 unité \\
+\midrule
+Superviseur de sécurité (Watchdog) & 
+Carte microcontrôleur industrielle (type ESP32-S3) avec relais optocouplés. Empêche physiquement tout allumage contradictoire de feux verts et force le repli en plan fixe en cas de panne de l'IA. & 1 unité \\
+\midrule
+Maquette carrefour et feux LED & 
+Structure miniature de carrefour à 4 branches avec 4 ensembles de feux tricolores à LED (Rouge, Jaune, Vert) en 5V/12V pour la visualisation physique. & 1 ensemble (4 feux) \\
+\midrule
+Alimentation secourue (Mini-UPS) & 
+Module d'alimentation avec batterie tampon LiFePO4 / Lithium pour assurer la continuité de service en cas de micro-coupure de courant. & 1 unité \\
+\midrule
+Câblage et connectique & 
+Faisceaux de câbles, nattes GPIO, borniers à vis, boîtier de protection et visserie d'assemblage. & 1 lot complet \\
+\bottomrule
+\end{tabular}
+\caption{Liste détaillée du matériel requis pour la réalisation du banc d'essai physique (Option 1).}
+\label{tab:devis_option1}
+\end{table}
+
+\section{Perspectives de développement}
+
+\begin{itemize}
+    \item \textbf{À court terme (1 à 2 mois) :} Acquisition des composants de l'Option 1, assemblage de la maquette physique et validation des temps de commutation avec le superviseur de sécurité.
+    \item \textbf{À moyen terme (3 à 5 mois) :} Entraînement du modèle de détection visuelle sur des vidéos réelles du carrefour de Thiès pour prendre en compte les deux-roues et transports collectifs.
+    \item \textbf{À plus long terme :} Déploiement d'un boîtier de test autonome sur mât et extension de l'algorithme à plusieurs carrefours interconnectés afin de créer une onde verte sur les axes majeurs de la commune.
+\end{itemize}
+
+\section{Conclusion}
+
+Ce projet allie la rigueur scientifique de l'intelligence artificielle appliquée aux transports et une approche pragmatique d'ingénierie système. Grâce à la mise en place du banc d'essai physique de l'Option 1, nous serons en mesure de valider concrètement le bon fonctionnement de notre contrôleur Double DQN, ouvrant ainsi la voie à une modernisation crédible et accessible de la gestion du trafic urbain à Thiès.
+
+\end{document}
